@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="Volley 源码解析">
+<meta name="keywords" content="android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Volley 源码解析">
+<meta property="og:url" content="http://www.diyfuture.cn/2015/02/01/Volley.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="Volley 源码解析">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.diyfuture.cn/image/volley/volley.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/volley/design.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/volley/Volley-run-flow-chart.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/volley/volley-class.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/volley/RequestQueue-add-flow-chart.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/volley/CacheDispatcher-run-flow-chart.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/volley/NetworkDispatcher-run-flow-chart.png">
+<meta property="og:image" content="http://www.diyfuture.cn/2015/02/01/image/response-process-flow-chart.png">
+<meta property="og:updated_time" content="2016-08-03T03:36:04.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Volley 源码解析">
+<meta name="twitter:description" content="Volley 源码解析">
+<meta name="twitter:image" content="http://www.diyfuture.cn/image/volley/volley.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://www.diyfuture.cn/2015/02/01/Volley.html"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Volley 源码解析 | Caij</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">厚积薄发</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br />About</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="Searching..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.diyfuture.cn/2015/02/01/Volley.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Volley 源码解析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-02-01 00:00:00" itemprop="dateCreated datePublished" datetime="2015-02-01T00:00:00+08:00">2015-02-01</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/02/01/Volley.html#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">Comments: </span> <span class="post-comments-count valine-comment-count" data-xid="/2015/02/01/Volley.html" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Volley 源码解析</p>
+<a id="more"></a>
+<p>该文章是github好友分析 </p>
+<blockquote>
+<p>本文为 <a href="https://github.com/android-cn/android-open-project-analysis" target="_blank" rel="noopener">Android 开源项目源码解析</a> 中 Volley 部分<br>项目地址：<a href="https://android.googlesource.com/platform/frameworks/volley/" target="_blank" rel="noopener">Volley</a>，分析的版本：<a href="https://android.googlesource.com/platform/frameworks/volley/+/35ce77836d8e1e951b8e4b2ec43e07fb7336dab6" target="_blank" rel="noopener">35ce778</a>，Demo 地址：<a href="https://github.com/android-cn/android-open-project-demo/tree/master/volley-demo" target="_blank" rel="noopener">Volley Demo</a>    </p>
+</blockquote>
+<h3 id="1-功能介绍"><a href="#1-功能介绍" class="headerlink" title="1. 功能介绍"></a>1. 功能介绍</h3><h4 id="1-1-Volley"><a href="#1-1-Volley" class="headerlink" title="1.1. Volley"></a>1.1. Volley</h4><p>Volley 是 Google 推出的 Android 异步网络请求框架和图片加载框架。在 Google I/O 2013 大会上发布。</p>
+<blockquote>
+<p>名字由来：a burst or emission of many things or a large amount at once<br>发布演讲时候的配图<br><img src="/image/volley/volley.png" alt="Volley"></p>
+</blockquote>
+<p>从名字由来和配图中无数急促的火箭可以看出 Volley 的特点：特别适合<strong>数据量小，通信频繁</strong>的网络操作。（个人认为 Android 应用中绝大多数的网络操作都属于这种类型）。</p>
+<h4 id="1-2-Volley-的主要特点"><a href="#1-2-Volley-的主要特点" class="headerlink" title="1.2 Volley 的主要特点"></a>1.2 Volley 的主要特点</h4><p>(1). 扩展性强。Volley 中大多是基于接口的设计，可配置性强。<br>(2). 一定程度符合 Http 规范，包括返回 ResponseCode(2xx、3xx、4xx、5xx）的处理，请求头的处理，缓存机制的支持等。并支持重试及优先级定义。<br>(3). 默认 Android2.3 及以上基于 HttpURLConnection，2.3 以下基于 HttpClient 实现，这两者的区别及优劣在<code>4.2.1 Volley</code>中具体介绍。<br>(4). 提供简便的图片加载工具。  </p>
+<h3 id="2-总体设计"><a href="#2-总体设计" class="headerlink" title="2. 总体设计"></a>2. 总体设计</h3><h4 id="2-1-总体设计图"><a href="#2-1-总体设计图" class="headerlink" title="2.1. 总体设计图"></a>2.1. 总体设计图</h4><p><img src="/image/volley/design.png" alt="总体设计图"><br>上面是 Volley 的总体设计图，主要是通过两种<code>Diapatch Thread</code>不断从<code>RequestQueue</code>中取出请求，根据是否已缓存调用<code>Cache</code>或<code>Network</code>这两类数据获取接口之一，从内存缓存或是服务器取得请求的数据，然后交由<code>ResponseDelivery</code>去做结果分发及回调处理。  </p>
+<h4 id="2-2-Volley-中的概念"><a href="#2-2-Volley-中的概念" class="headerlink" title="2.2. Volley 中的概念"></a>2.2. Volley 中的概念</h4><p>简单介绍一些概念，在<code>详细设计</code>中会仔细介绍。<br>Volley 的调用比较简单，通过 newRequestQueue(…) 函数新建并启动一个请求队列<code>RequestQueue</code>后，只需要往这个<code>RequestQueue</code>不断 add Request 即可。  </p>
+<p><strong>Volley：</strong>Volley 对外暴露的 API，通过 newRequestQueue(…) 函数新建并启动一个请求队列<code>RequestQueue</code>。  </p>
+<p><strong>Request：</strong>表示一个请求的抽象类。<code>StringRequest</code>、<code>JsonRequest</code>、<code>ImageRequest</code> 都是它的子类，表示某种类型的请求。  </p>
+<p><strong>RequestQueue：</strong>表示请求队列，里面包含一个<code>CacheDispatcher</code>(用于处理走缓存请求的调度线程)、<code>NetworkDispatcher</code>数组(用于处理走网络请求的调度线程)，一个<code>ResponseDelivery</code>(返回结果分发接口)，通过 start() 函数启动时会启动<code>CacheDispatcher</code>和<code>NetworkDispatchers</code>。  </p>
+<p><strong>CacheDispatcher：</strong>一个线程，用于调度处理走缓存的请求。启动后会不断从缓存请求队列中取请求处理，队列为空则等待，请求处理结束则将结果传递给<code>ResponseDelivery</code>去执行后续处理。当结果未缓存过、缓存失效或缓存需要刷新的情况下，该请求都需要重新进入<code>NetworkDispatcher</code>去调度处理。  </p>
+<p><strong>NetworkDispatcher：</strong>一个线程，用于调度处理走网络的请求。启动后会不断从网络请求队列中取请求处理，队列为空则等待，请求处理结束则将结果传递给<code>ResponseDelivery</code>去执行后续处理，并判断结果是否要进行缓存。  </p>
+<p><strong>ResponseDelivery：</strong>返回结果分发接口，目前只有基于<code>ExecutorDelivery</code>的在入参 handler 对应线程内进行分发。  </p>
+<p><strong>HttpStack：</strong>处理 Http 请求，返回请求结果。目前 Volley 中有基于 HttpURLConnection 的<code>HurlStack</code>和 基于 Apache HttpClient 的<code>HttpClientStack</code>。  </p>
+<p><strong>Network：</strong>调用<code>HttpStack</code>处理请求，并将结果转换为可被<code>ResponseDelivery</code>处理的<code>NetworkResponse</code>。  </p>
+<p><strong>Cache：</strong>缓存请求结果，Volley 默认使用的是基于 sdcard 的<code>DiskBasedCache</code>。<code>NetworkDispatcher</code>得到请求结果后判断是否需要存储在 Cache，<code>CacheDispatcher</code>会从 Cache 中取缓存结果。  </p>
+<h3 id="3-流程图"><a href="#3-流程图" class="headerlink" title="3. 流程图"></a>3. 流程图</h3><p>Volley 请求流程图<br><img src="/image/volley/Volley-run-flow-chart.png" alt="Volley请求流程图"></p>
+<blockquote>
+<p><strong>上图是 Volley 请求时的流程图，在  Volley 的发布演讲中给出，我在这里将其用中文重新画出。</strong>   </p>
+</blockquote>
+<h3 id="4-详细设计"><a href="#4-详细设计" class="headerlink" title="4. 详细设计"></a>4. 详细设计</h3><h4 id="4-1-类关系图"><a href="#4-1-类关系图" class="headerlink" title="4.1 类关系图"></a>4.1 类关系图</h4><p><img src="/image/volley/volley-class.png" alt="类关系图"><br>这是 Volley 框架的主要类关系图    </p>
+<blockquote>
+<p>图中<strong>红色圈内</strong>的部分，组成了 Volley 框架的核心，围绕 RequestQueue 类，将各个功能点以<strong>组合</strong>的方式结合在了一起。各个功能点也都是以<strong>接口</strong>或者<strong>抽象类</strong>的形式提供。<br>红色圈外面的部分，在 Volley 源码中放在了toolbox包中，作为 Volley 为各个功能点提供的默认的具体实现。<br>通过类图我们看出， Volley 有着非常好的拓展性。通过各个功能点的接口，我们可以给出自定义的，更符合我们需求的具体实现。</p>
+<p><strong>多用组合，少用继承；针对接口编程，不针对具体实现编程。</strong>  </p>
+<p><strong>优秀框架的设计，令人叫绝，受益良多。</strong>  </p>
+</blockquote>
+<h3 id="4-2-核心类功能介绍"><a href="#4-2-核心类功能介绍" class="headerlink" title="4.2 核心类功能介绍"></a>4.2 核心类功能介绍</h3><h4 id="4-2-1-Volley-java"><a href="#4-2-1-Volley-java" class="headerlink" title="4.2.1 Volley.java"></a>4.2.1 Volley.java</h4><p>这个和 Volley 框架同名的类，其实是个工具类，作用是构建一个可用于添加网络请求的<code>RequestQueue</code>对象。<br><strong>(1). 主要函数</strong><br>Volley.java 有两个重载的静态方法。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> RequestQueue <span class="title">newRequestQueue</span><span class="params">(Context context)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> RequestQueue <span class="title">newRequestQueue</span><span class="params">(Context context, HttpStack stack)</span></span></span><br></pre></td></tr></table></figure></p>
+<p>第一个方法的实现调用了第二个方法，传 HttpStack 参数为 null。<br>第二个方法中，如果 HttpStatck 参数为 null，则如果系统在 Gingerbread 及之后(即 API Level &gt;= 9)，采用基于 HttpURLConnection 的 HurlStack，如果小于 9，采用基于 HttpClient 的 HttpClientStack。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (stack == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt;= <span class="number">9</span>) &#123;</span><br><span class="line">        stack = <span class="keyword">new</span> HurlStack();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        stack = <span class="keyword">new</span> HttpClientStack(AndroidHttpClient.newInstance(userAgent));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>得到了 HttpStack,然后通过它构造一个代表网络（Network）的具体实现<code>BasicNetwork</code>。<br>接着构造一个代表缓存（Cache）的基于 Disk 的具体实现<code>DiskBasedCache</code>。<br>最后将网络（Network）对象和缓存（Cache）对象传入构建一个 RequestQueue，启动这个 RequestQueue，并返回。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Network network = <span class="keyword">new</span> BasicNetwork(stack);</span><br><span class="line">RequestQueue queue = <span class="keyword">new</span> RequestQueue(<span class="keyword">new</span> DiskBasedCache(cacheDir), network);</span><br><span class="line">queue.start();</span><br><span class="line"><span class="keyword">return</span> queue;</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p>我们平时大多采用<code>Volly.newRequestQueue(context)</code>的默认实现，构建RequestQueue。<br>通过源码可以看出，我们可以抛开 Volley 工具类构建自定义的RequestQueue，采用自定义的<code>HttpStatck</code>，采用自定义的<code>Network</code>实现，采用自定义的Cache实现等来构建<code>RequestQueue</code>。<br><strong>优秀框架的高可拓展性的魅力来源于此啊</strong></p>
+</blockquote>
+<p><strong>(2). HttpURLConnection 和 AndroidHttpClient(HttpClient 的封装)如何选择及原因：</strong><br>在 Froyo(2.2) 之前，HttpURLConnection 有个重大 Bug，调用 close() 函数会影响连接池，导致连接复用失效，所以在 Froyo 之前使用 HttpURLConnection 需要关闭 keepAlive。<br>另外在 Gingerbread(2.3) HttpURLConnection 默认开启了 gzip 压缩，提高了 HTTPS 的性能，Ice Cream Sandwich(4.0) HttpURLConnection 支持了请求结果缓存。<br>再加上 HttpURLConnection 本身 API 相对简单，所以对 Android 来说，在 2.3 之后建议使用 HttpURLConnection，之前建议使用 AndroidHttpClient。  </p>
+<p><strong>(3). 关于 User Agent</strong><br>通过代码我们发现如果是使用 AndroidHttpClient，Volley 还会将请求头中的 User-Agent 字段设置为 App 的 ${packageName}/${versionCode}，如果异常则使用 “volley/0”，不过这个获取 User-Agent 的操作应该放到 if else 内部更合适。而对于 HttpURLConnection 却没有任何操作，为什么呢？<br>如果用 <a href="http://www.trinea.cn/android/android-network-sniffer/" target="_blank" rel="noopener">Fiddler 或 Charles</a> 对数据抓包我们会发现，我们会发现 HttpURLConnection 默认是有 User-Agent 的，类似：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Dalvik/<span class="number">1.6</span>.0 (Linux; U; Android <span class="number">4.1</span>.1; Google Nexus <span class="number">4</span> - <span class="number">4.1</span>.1 - API <span class="number">16</span> - <span class="number">768</span>x1280_1 Build/JRO03S)</span><br></pre></td></tr></table></figure></p>
+<p>经常用 WebView 的同学会也许会发现似曾相识，是的，WebView 默认的 User-Agent 也是这个。实际在请求发出之前，会检测 User-Agent 是否为空，如果不为空，则加上系统默认 User-Agent。在 Android 2.1 之后，我们可以通过<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String userAgent = System.getProperty(<span class="string">"http.agent"</span>);</span><br></pre></td></tr></table></figure></p>
+<p>得到系统默认的 User-Agent，Volley 如果希望自定义 User-Agent，可在自定义 Request 中重写 getHeaders() 函数<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Map&lt;String, String&gt; <span class="title">getHeaders</span><span class="params">()</span> <span class="keyword">throws</span> AuthFailureError </span>&#123;</span><br><span class="line">    <span class="comment">// self-defined user agent</span></span><br><span class="line">    Map&lt;String, String&gt; headerMap = <span class="keyword">new</span> HashMap&lt;String, String&gt;();</span><br><span class="line">    headerMap.put(<span class="string">"User-Agent"</span>, <span class="string">"android-open-project-analysis/1.0"</span>);</span><br><span class="line">    <span class="keyword">return</span> headerMap;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="4-2-2-Request-java"><a href="#4-2-2-Request-java" class="headerlink" title="4.2.2 Request.java"></a>4.2.2 Request.java</h4><p>代表一个网络请求的抽象类。我们通过构建一个<code>Request</code>类的非抽象子类(StringRequest、JsonRequest、ImageRequest或自定义)对象，并将其加入到·RequestQueue·中来完成一次网络请求操作。<br>Volley 支持 8 种 Http 请求方式 <strong>GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE, PATCH</strong><br>Request 类中包含了请求 url，请求请求方式，请求 Header，请求 Body，请求的优先级等信息。  </p>
+<p><strong>因为是抽象类，子类必须重写的两个方法。</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">abstract</span> <span class="keyword">protected</span> Response&lt;T&gt; <span class="title">parseNetworkResponse</span><span class="params">(NetworkResponse response)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>子类重写此方法，将网络返回的原生字节内容，转换成合适的类型。此方法会在工作线程中被调用。  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">abstract</span> <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">deliverResponse</span><span class="params">(T response)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>子类重写此方法，将解析成合适类型的内容传递给它们的监听回调。</p>
+<p><strong>以下两个方法也经常会被重写</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">byte</span>[] getBody()</span><br></pre></td></tr></table></figure></p>
+<p>重写此方法，可以构建用于 POST、PUT、PATCH 请求方式的 Body 内容。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> Map&lt;String, String&gt; <span class="title">getParams</span><span class="params">()</span></span></span><br></pre></td></tr></table></figure></p>
+<p>在上面<code>getBody</code>函数没有被重写情况下，此方法的返回值会被 key、value 分别编码后拼装起来转换为字节码作为 Body 内容。  </p>
+<h4 id="4-2-3-RequestQueue-java"><a href="#4-2-3-RequestQueue-java" class="headerlink" title="4.2.3 RequestQueue.java"></a>4.2.3 RequestQueue.java</h4><p>Volley 框架的核心类，将请求Request加入到一个运行的<code>RequestQueue</code>中，来完成请求操作。</p>
+<h4 id="1-主要成员变量"><a href="#1-主要成员变量" class="headerlink" title="(1). 主要成员变量"></a>(1). 主要成员变量</h4><p>RequestQueue 中维护了两个<strong>基于优先级</strong>的 Request 队列，缓存请求队列和网络请求队列。<br>放在缓存请求队列中的 Request，将通过缓存获取数据；放在网络请求队列中的 Request，将通过网络获取数据。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> PriorityBlockingQueue&lt;Request&lt;?&gt;&gt; mCacheQueue = <span class="keyword">new</span> PriorityBlockingQueue&lt;Request&lt;?&gt;&gt;();</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> PriorityBlockingQueue&lt;Request&lt;?&gt;&gt; mNetworkQueue = <span class="keyword">new</span> PriorityBlockingQueue&lt;Request&lt;?&gt;&gt;();</span><br></pre></td></tr></table></figure></p>
+<p>维护了一个正在进行中，尚未完成的请求集合。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;Request&lt;?&gt;&gt; mCurrentRequests = <span class="keyword">new</span> HashSet&lt;Request&lt;?&gt;&gt;();</span><br></pre></td></tr></table></figure></p>
+<p>维护了一个等待请求的集合，如果一个请求正在被处理并且可以被缓存，后续的相同 url 的请求，将进入此等待队列。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Map&lt;String, Queue&lt;Request&lt;?&gt;&gt;&gt; mWaitingRequests = <span class="keyword">new</span> HashMap&lt;String, Queue&lt;Request&lt;?&gt;&gt;&gt;();</span><br></pre></td></tr></table></figure></p>
+<h4 id="2-启动队列"><a href="#2-启动队列" class="headerlink" title="(2). 启动队列"></a>(2). 启动队列</h4><p>创建出 RequestQueue 以后，调用 start 方法，启动队列。  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Starts the dispatchers in this queue.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">start</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    stop();  <span class="comment">// Make sure any currently running dispatchers are stopped.</span></span><br><span class="line">    <span class="comment">// Create the cache dispatcher and start it.</span></span><br><span class="line">    mCacheDispatcher = <span class="keyword">new</span> CacheDispatcher(mCacheQueue, mNetworkQueue, mCache, mDelivery);</span><br><span class="line">    mCacheDispatcher.start();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Create network dispatchers (and corresponding threads) up to the pool size.</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; mDispatchers.length; i++) &#123;</span><br><span class="line">        NetworkDispatcher networkDispatcher = <span class="keyword">new</span> NetworkDispatcher(mNetworkQueue, mNetwork,</span><br><span class="line">                mCache, mDelivery);</span><br><span class="line">        mDispatchers[i] = networkDispatcher;</span><br><span class="line">        networkDispatcher.start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>start 方法中，开启一个<strong>缓存调度线程<code>CacheDispatcher</code></strong>和 n 个<strong>网络调度线程<code>NetworkDispatcher</code></strong>，这里 n 默认为4，存在优化的余地，比如可以根据 CPU 核数以及网络类型计算更合适的并发数。<br>缓存调度线程不断的从缓存请求队列中取出 Request 去处理，网络调度线程不断的从网络请求队列中取出 Request 去处理。  </p>
+<h4 id="3-加入请求"><a href="#3-加入请求" class="headerlink" title="(3). 加入请求"></a>(3). 加入请求</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">Request&lt;T&gt; <span class="title">add</span><span class="params">(Request&lt;T&gt; request)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>流程图如下：<br><img src="/image/volley/RequestQueue-add-flow-chart.png" alt="加入请求流程图"></p>
+<h4 id="4-请求完成"><a href="#4-请求完成" class="headerlink" title="(4). 请求完成"></a>(4). 请求完成</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">finish</span><span class="params">(Request&lt;?&gt; request)</span></span></span><br></pre></td></tr></table></figure>
+<p>Request 请求结束  </p>
+<blockquote>
+<p>(1). 首先从正在进行中请求集合<code>mCurrentRequests</code>中移除该请求。<br>(2). 然后查找请求等待集合<code>mWaitingRequests</code>中是否存在等待的请求，如果存在，则将等待队列移除，并将等待队列所有的请求添加到缓存请求队列中，让缓存请求处理线程<code>CacheDispatcher</code>自动处理。  </p>
+</blockquote>
+<h4 id="5-请求取消"><a href="#5-请求取消" class="headerlink" title="(5). 请求取消"></a>(5). 请求取消</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">cancelAll</span><span class="params">(RequestFilter filter)</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">cancelAll</span><span class="params">(<span class="keyword">final</span> Object tag)</span></span></span><br></pre></td></tr></table></figure>
+<p>取消当前请求集合中所有符合条件的请求。<br>filter 参数表示可以按照自定义的过滤器过滤需要取消的请求。<br>tag 表示按照<code>Request.setTag</code>设置好的 tag 取消请求，比如同属于某个 Activity 的。  </p>
+<h4 id="4-2-4-CacheDispatcher-java"><a href="#4-2-4-CacheDispatcher-java" class="headerlink" title="4.2.4 CacheDispatcher.java"></a>4.2.4 CacheDispatcher.java</h4><p>一个线程，用于调度处理走缓存的请求。启动后会不断从缓存请求队列中取请求处理，队列为空则等待，请求处理结束则将结果传递给<code>ResponseDelivery</code> 去执行后续处理。当结果未缓存过、缓存失效或缓存需要刷新的情况下，该请求都需要重新进入<code>NetworkDispatcher</code>去调度处理。  </p>
+<p>####(1). 成员变量<br><code>BlockingQueue&lt;Request&lt;?&gt;&gt; mCacheQueue</code> 缓存请求队列<br><code>BlockingQueue&lt;Request&lt;?&gt;&gt; mNetworkQueue</code> 网络请求队列<br><code>Cache mCache</code> 缓存类，代表了一个可以获取请求结果，存储请求结果的缓存<br><code>ResponseDelivery mDelivery</code> 请求结果传递类  </p>
+<h4 id="2-处理流程图"><a href="#2-处理流程图" class="headerlink" title="(2). 处理流程图"></a>(2). 处理流程图</h4><p><img src="/image/volley/CacheDispatcher-run-flow-chart.png" alt="缓存调度线程处理流程图"></p>
+<h4 id="4-2-5-NetworkDispatcher-java"><a href="#4-2-5-NetworkDispatcher-java" class="headerlink" title="4.2.5 NetworkDispatcher.java"></a>4.2.5 NetworkDispatcher.java</h4><p>一个线程，用于调度处理走网络的请求。启动后会不断从网络请求队列中取请求处理，队列为空则等待，请求处理结束则将结果传递给 ResponseDelivery 去执行后续处理，并判断结果是否要进行缓存。</p>
+<h4 id="1-成员变量"><a href="#1-成员变量" class="headerlink" title="(1). 成员变量"></a>(1). 成员变量</h4><p><code>BlockingQueue&lt;Request&lt;?&gt;&gt; mQueue</code> 网络请求队列<br><code>Network mNetwork</code> 网络类，代表了一个可以执行请求的网络<br><code>Cache mCache</code>  缓存类，代表了一个可以获取请求结果，存储请求结果的缓存<br><code>ResponseDelivery mDelivery</code> 请求结果传递类，可以传递请求的结果或者错误到调用者  </p>
+<h4 id="2-处理流程图-1"><a href="#2-处理流程图-1" class="headerlink" title="(2). 处理流程图"></a>(2). 处理流程图</h4><p><img src="/image/volley/NetworkDispatcher-run-flow-chart.png" alt="网络调度线程处理流程图"></p>
+<h4 id="4-2-6-Cache-java"><a href="#4-2-6-Cache-java" class="headerlink" title="4.2.6 Cache.java"></a>4.2.6 Cache.java</h4><p>缓存接口，代表了一个可以获取请求结果，存储请求结果的缓存。</p>
+<h4 id="1-主要方法："><a href="#1-主要方法：" class="headerlink" title="(1). 主要方法："></a>(1). 主要方法：</h4><p><code>public Entry get(String key);</code> 通过 key 获取请求的缓存实体<br><code>public void put(String key, Entry entry);</code> 存入一个请求的缓存实体<br><code>public void remove(String key);</code> 移除指定的缓存实体<br><code>public void clear();</code> 清空缓存  </p>
+<h4 id="2-代表缓存实体的内部类-Entry"><a href="#2-代表缓存实体的内部类-Entry" class="headerlink" title="(2). 代表缓存实体的内部类 Entry"></a>(2). 代表缓存实体的内部类 Entry</h4><p>成员变量和方法<br><code>byte[] data</code> 请求返回的数据（Body 实体）<br><code>String etag</code> Http 响应首部中用于缓存新鲜度验证的 ETag<br><code>long serverDate</code> Http 响应首部中的响应产生时间<br><code>long ttl</code> 缓存的过期时间<br><code>long softTtl</code> 缓存的新鲜时间<br><code>Map&lt;String, String&gt; responseHeaders</code> 响应的 Headers<br><code>boolean isExpired()</code> 判断缓存是否过期，过期缓存不能继续使用<br><code>boolean refreshNeeded()</code> 判断缓存是否新鲜，不新鲜的缓存需要发到服务端做新鲜度的检测  </p>
+<h4 id="4-2-7-DiskBasedCache-java"><a href="#4-2-7-DiskBasedCache-java" class="headerlink" title="4.2.7 DiskBasedCache.java"></a>4.2.7 DiskBasedCache.java</h4><p>继承 Cache 类，基于 Disk 的缓存实现类。</p>
+<h4 id="1-主要方法：-1"><a href="#1-主要方法：-1" class="headerlink" title="(1). 主要方法："></a>(1). 主要方法：</h4><p><code>public synchronized void initialize()</code> 初始化，扫描缓存目录得到所有缓存数据摘要信息放入内存。<br><code>public synchronized Entry get(String key)</code> 从缓存中得到数据。先从摘要信息中得到摘要信息，然后读取缓存数据文件得到内容。<br><code>public synchronized void put(String key, Entry entry)</code> 将数据存入缓存内。先检查缓存是否会满，会则先删除缓存中部分数据，然后再新建缓存文件。<br><code>private void pruneIfNeeded(int neededSpace)</code> 检查是否能再分配 neededSpace 字节的空间，如果不能则删除缓存中部分数据。<br><code>public synchronized void clear()</code> 清空缓存。<br><code>public synchronized void remove(String key)</code> 删除缓存中某个元素。  </p>
+<h4 id="2-CacheHeader-类"><a href="#2-CacheHeader-类" class="headerlink" title="(2). CacheHeader 类"></a>(2). CacheHeader 类</h4><p>CacheHeader 是缓存文件摘要信息，存储在缓存文件的头部，与上面的<code>Cache.Entry</code>相似。  </p>
+<h4 id="4-2-8-NoCache-java"><a href="#4-2-8-NoCache-java" class="headerlink" title="4.2.8 NoCache.java"></a>4.2.8 NoCache.java</h4><p>继承 Cache 类，不做任何操作的缓存实现类，可将它作为构建<code>RequestQueue</code>的参数以实现一个不带缓存的请求队列。  </p>
+<h4 id="4-2-9-Network-java"><a href="#4-2-9-Network-java" class="headerlink" title="4.2.9 Network.java"></a>4.2.9 Network.java</h4><p>代表网络的接口，处理网络请求。<br>唯一的方法，用于执行特定请求。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> NetworkResponse <span class="title">performRequest</span><span class="params">(Request&lt;?&gt; request)</span> <span class="keyword">throws</span> VolleyError</span>;</span><br></pre></td></tr></table></figure></p>
+<h4 id="4-2-10-NetworkResponse-java"><a href="#4-2-10-NetworkResponse-java" class="headerlink" title="4.2.10 NetworkResponse.java"></a>4.2.10 NetworkResponse.java</h4><p><code>Network</code>中方法 performRequest 的返回值，<code>Request</code>的 parseNetworkResponse(…) 方法入参，是 Volley 中用于内部 Response 转换的一级。<br>封装了网络请求响应的 StatusCode，Headers 和 Body 等。  </p>
+<h4 id="1-成员变量-1"><a href="#1-成员变量-1" class="headerlink" title="(1). 成员变量"></a>(1). 成员变量</h4><p><code>int statusCode</code> Http 响应状态码<br><code>byte[] data</code> Body 数据<br><code>Map&lt;String, String&gt; headers</code> 响应 Headers<br><code>boolean notModified</code> 表示是否为 304 响应<br><code>long networkTimeMs</code> 请求耗时  </p>
+<h4 id="2-Volley-的内部-Response-转换流程图"><a href="#2-Volley-的内部-Response-转换流程图" class="headerlink" title="(2). Volley 的内部 Response 转换流程图"></a>(2). Volley 的内部 Response 转换流程图</h4><p><img src="image/response-process-flow-chart.png" alt="Volley"><br>从上到下表示从得到数据后一步步的处理，箭头旁的注释表示该步处理后的实体类。  </p>
+<h4 id="4-2-11-BasicNetwork-java"><a href="#4-2-11-BasicNetwork-java" class="headerlink" title="4.2.11 BasicNetwork.java"></a>4.2.11 BasicNetwork.java</h4><p>实现 Network，Volley 中默认的网络接口实现类。调用<code>HttpStack</code>处理请求，并将结果转换为可被<code>ResponseDelivery</code>处理的<code>NetworkResponse</code>。<br>主要实现了以下功能：<br>(1). 利用 HttpStack 执行网络请求。<br>(2). 如果 Request 中带有实体信息，如 Etag,Last-Modify 等，则进行缓存新鲜度的验证，并处理 304（Not Modify）响应。<br>(3). 如果发生超时，认证失败等错误，进行重试操作，直到成功、抛出异常(不满足重试策略等)结束。  </p>
+<h4 id="4-2-12-HttpStack-java"><a href="#4-2-12-HttpStack-java" class="headerlink" title="4.2.12 HttpStack.java"></a>4.2.12 HttpStack.java</h4><p>用于处理 Http 请求，返回请求结果的接口。目前 Volley 中的实现有基于 HttpURLConnection 的 HurlStack 和 基于 Apache HttpClient 的 HttpClientStack。<br>唯一方法，执行请求<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> HttpResponse <span class="title">performRequest</span><span class="params">(Request&lt;?&gt; request, Map&lt;String, String&gt; additionalHeaders)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> IOException, AuthFailureError</span>;</span><br></pre></td></tr></table></figure></p>
+<p>执行 Request 代表的请求，第二个参数表示发起请求之前，添加额外的请求 Headers。  </p>
+<h4 id="4-2-13-HttpClientStack-java"><a href="#4-2-13-HttpClientStack-java" class="headerlink" title="4.2.13 HttpClientStack.java"></a>4.2.13 HttpClientStack.java</h4><p>实现 HttpStack 接口，利用 Apache 的 HttpClient 进行各种请求方式的请求。<br>基本就是 org.apache.http 包下面相关类的常见用法，不做详解，不过与下面 HttpURLConnection 做下对比就能发现 HttpURLConnection 的 API 相对简单的多。  </p>
+<p>####4.2.14 HurlStack.java<br>实现 HttpStack 接口，利用 Java 的 HttpURLConnection 进行各种请求方式的请求。  </p>
+<h4 id="4-2-15-Response-java"><a href="#4-2-15-Response-java" class="headerlink" title="4.2.15 Response.java"></a>4.2.15 Response.java</h4><p>封装了经过解析后的数据，用于传输。并且有两个内部接口 Listener 和 ErrorListener 分别可表示请求失败和成功后的回调。<br>Response 的构造函数被私有化，而通过两个函数名更易懂的静态方法构建对象。  </p>
+<h4 id="4-2-16-ByteArrayPool-java"><a href="#4-2-16-ByteArrayPool-java" class="headerlink" title="4.2.16 ByteArrayPool.java"></a>4.2.16 ByteArrayPool.java</h4><p>byte[] 的回收池，用于 byte[] 的回收再利用，减少了内存的分配和回收。<br>主要通过一个元素长度从小到大排序的<code>ArrayList</code>作为 byte[] 的缓存，另有一个按使用时间先后排序的<code>ArrayList</code>属性用于缓存满时清理元素。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">returnBuf</span><span class="params">(<span class="keyword">byte</span>[] buf)</span></span></span><br></pre></td></tr></table></figure></p>
+<p>将用过的 byte[] 回收，根据 byte[] 长度按照从小到大的排序将 byte[] 插入到缓存中合适位置。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">byte</span>[] getBuf(<span class="keyword">int</span> len)</span><br></pre></td></tr></table></figure></p>
+<p>获取长度不小于 len 的 byte[]，遍历缓存，找出第一个长度大于传入参数<code>len</code>的 byte[]，并返回；如果最终没有合适的byte[]，new 一个返回。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">trim</span><span class="params">()</span></span></span><br></pre></td></tr></table></figure></p>
+<p>当缓存的 byte 超过预先设置的大小时，按照先进先出的顺序删除最早的 byte[]。  </p>
+<h4 id="4-2-17-PoolingByteArrayOutputStream-java"><a href="#4-2-17-PoolingByteArrayOutputStream-java" class="headerlink" title="4.2.17 PoolingByteArrayOutputStream.java"></a>4.2.17 PoolingByteArrayOutputStream.java</h4><p>继承ByteArrayOutputStream，原始 ByteArrayOutputStream 中用于接受写入 bytes 的 buf，每次空间不足时便会 new 更大容量的 byte[]，而 PoolingByteArrayOutputStream 使用了 ByteArrayPool 作为 Byte[] 缓存来减少这种操作，从而提高性能。  </p>
+<h4 id="4-2-18-HttpHeaderParser-java"><a href="#4-2-18-HttpHeaderParser-java" class="headerlink" title="4.2.18 HttpHeaderParser.java"></a>4.2.18 HttpHeaderParser.java</h4><p>Http header 的解析工具类，在 Volley 中主要作用是用于解析 Header 从而判断返回结果是否需要缓存，如果需要返回 Header 中相关信息。<br>有三个方法<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">parseDateAsEpoch</span><span class="params">(String dateStr)</span></span></span><br></pre></td></tr></table></figure></p>
+<p>解析时间，将 RFC1123 的时间格式，解析成 epoch 时间</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">parseCharset</span><span class="params">(Map&lt;String, String&gt; headers)</span></span></span><br></pre></td></tr></table></figure>
+<p>解析编码集，在 Content-Type 首部中获取编码集，如果没有找到，默认返回 ISO-8859-1</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Cache.<span class="function">Entry <span class="title">parseCacheHeaders</span><span class="params">(NetworkResponse response)</span></span></span><br></pre></td></tr></table></figure>
+<p><strong>比较重要的方法</strong>，通过网络响应中的缓存控制 Header 和 Body 内容，构建缓存实体。如果 Header 的 Cache-Control 字段含有<code>no-cache</code>或<code>no-store</code>表示不缓存，返回 null。<br>(1). 根据 Date 首部，获取响应生成时间<br>(2). 根据 ETag 首部，获取响应实体标签<br>(3). 根据 Cache－Control 和 Expires 首部，计算出缓存的过期时间，和缓存的新鲜度时间</p>
+<blockquote>
+<p>两点需要说明下：<br>1.没有处理<code>Last-Modify</code>首部，而是处理存储了<code>Date</code>首部，并在后续的新鲜度验证时，使用<code>Date</code>来构建<code>If-Modified-Since</code>。<br>这与 Http 1.1 的语义有些违背。<br>2.计算过期时间，Cache－Control 首部优先于 Expires 首部。  </p>
+</blockquote>
+<h4 id="4-2-19-RetryPolicy-java"><a href="#4-2-19-RetryPolicy-java" class="headerlink" title="4.2.19 RetryPolicy.java"></a>4.2.19 RetryPolicy.java</h4><p>重试策略接口<br>有三个方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getCurrentTimeout</span><span class="params">()</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>获取当前请求用时（用于Log）<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getCurrentRetryCount</span><span class="params">()</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>获取已经重试的次数（用于Log）<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">retry</span><span class="params">(VolleyError error)</span> <span class="keyword">throws</span> VolleyError</span>;</span><br></pre></td></tr></table></figure></p>
+<p>确定是否重试，参数为这次异常的具体信息。在请求异常时此接口会被调用，可在此函数实现中抛出传入的异常表示停止重试。  </p>
+<h4 id="4-2-20-DefaultRetryPolicy-java"><a href="#4-2-20-DefaultRetryPolicy-java" class="headerlink" title="4.2.20 DefaultRetryPolicy.java"></a>4.2.20 DefaultRetryPolicy.java</h4><p>实现 RetryPolicy，Volley 默认的重试策略实现类。主要通过在 retry(…) 函数中判断重试次数是否达到上限确定是否继续重试。<br>其中<code>mCurrentTimeoutMs</code>变量表示已经重试次数。<br><code>mBackoffMultiplier</code>表示每次重试之前的 timeout 该乘以的因子。<br><code>mCurrentTimeoutMs</code>变量表示当前重试的 timeout 时间，会以<code>mBackoffMultiplier</code>作为因子累计前几次重试的 timeout。  </p>
+<h4 id="4-2-21-ResponseDelivery-java"><a href="#4-2-21-ResponseDelivery-java" class="headerlink" title="4.2.21 ResponseDelivery.java"></a>4.2.21 ResponseDelivery.java</h4><p>请求结果的传输接口，用于传递请求结果或者请求错误。<br>有三个方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">postResponse</span><span class="params">(Request&lt;?&gt; request, Response&lt;?&gt; response)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>此方法用于传递请求结果，<code>request</code> 和 <code>response</code> 参数分别表示请求信息和返回结果信息。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">postResponse</span><span class="params">(Request&lt;?&gt; request, Response&lt;?&gt; response, Runnable runnable)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>此方法用于传递请求结果，并在完成传递后执行 Runnable。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">postError</span><span class="params">(Request&lt;?&gt; request, VolleyError error)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>此方法用于传输请求错误。  </p>
+<h4 id="4-2-22-ExecutorDelivery-java"><a href="#4-2-22-ExecutorDelivery-java" class="headerlink" title="4.2.22 ExecutorDelivery.java"></a>4.2.22 ExecutorDelivery.java</h4><p>请求结果传输接口具体实现类。<br>在 Handler 对应线程中传输缓存调度线程或者网络调度线程中产生的请求结果或请求错误，会在请求成功的情况下调用 Request.deliverResponse(…) 函数，失败时调用 Request.deliverError(…) 函数。  </p>
+<h4 id="4-2-23-StringRequest-java"><a href="#4-2-23-StringRequest-java" class="headerlink" title="4.2.23 StringRequest.java"></a>4.2.23 StringRequest.java</h4><p>继承 Request 类,代表了一个返回值为 String 的请求。将网络返回的结果数据解析为 String 类型。通过构造函数的 listener 传参，支持请求成功后的 onResponse(…) 回调。  </p>
+<h4 id="4-2-24-JsonRequest-java"><a href="#4-2-24-JsonRequest-java" class="headerlink" title="4.2.24 JsonRequest.java"></a>4.2.24 JsonRequest.java</h4><p>抽象类，继承自 Request，代表了 body 为 JSON 的请求。提供了构建 JSON 请求参数的方法。  </p>
+<h4 id="4-2-25-JsonObjectRequest-java"><a href="#4-2-25-JsonObjectRequest-java" class="headerlink" title="4.2.25 JsonObjectRequest.java"></a>4.2.25 JsonObjectRequest.java</h4><p>继承自 JsonRequest，将网络返回的结果数据解析为 JSONObject 类型。  </p>
+<h4 id="4-2-26-JsonArrayRequest-java"><a href="#4-2-26-JsonArrayRequest-java" class="headerlink" title="4.2.26 JsonArrayRequest.java"></a>4.2.26 JsonArrayRequest.java</h4><p>继承自 JsonRequest，将网络返回的结果数据解析为 JSONArray 类型。  </p>
+<h4 id="4-2-27-ImageRequest-java"><a href="#4-2-27-ImageRequest-java" class="headerlink" title="4.2.27 ImageRequest.java"></a>4.2.27 ImageRequest.java</h4><p>继承 Request 类，代表了一个返回值为 Image 的请求。将网络返回的结果数据解析为 Bitmap 类型。<br>可以设置图片的最大宽度和最大高度，并计算出合适尺寸返回。每次最多解析一张图片防止 OOM。  </p>
+<h4 id="4-2-28-ImageLoader-java"><a href="#4-2-28-ImageLoader-java" class="headerlink" title="4.2.28 ImageLoader.java"></a>4.2.28 ImageLoader.java</h4><p>封装了 ImageRequst 的方便使用的图片加载工具类。 </p>
+<blockquote>
+<p>1.可以设置自定义的<code>ImageCache</code>，可以是内存缓存，也可以是 Disk 缓存，将获取的图片缓存起来，重复利用，减少请求。<br>2.可以定义图片请求过程中显示的图片和请求失败后显示的图片。<br>3.相同请求（相同地址，相同大小）只发送一个，可以避免重复请求。<br>// TODO  </p>
+</blockquote>
+<h4 id="4-2-29-NetworkImageView-java"><a href="#4-2-29-NetworkImageView-java" class="headerlink" title="4.2.29 NetworkImageView.java"></a>4.2.29 NetworkImageView.java</h4><p>利用 ImageLoader，可以加载网络图片的 ImageView<br>有三个公开的方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setDefaultImageResId</span><span class="params">(<span class="keyword">int</span> defaultImage)</span></span></span><br></pre></td></tr></table></figure></p>
+<p>设置默认图片，加载图片过程中显示。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setErrorImageResId</span><span class="params">(<span class="keyword">int</span> errorImage)</span></span></span><br></pre></td></tr></table></figure></p>
+<p>设置错误图片，加载图片失败后显示。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setImageUrl</span><span class="params">(String url, ImageLoader imageLoader)</span></span></span><br></pre></td></tr></table></figure></p>
+<p>设置网络图片的 Url 和 ImageLoader，将利用这个 ImageLoader 去获取网络图片。  </p>
+<blockquote>
+<p>如果有新的图片加载请求，会把这个ImageView上旧的加载请求取消。  </p>
+</blockquote>
+<h4 id="4-2-30-ClearCacheRequest-java"><a href="#4-2-30-ClearCacheRequest-java" class="headerlink" title="4.2.30 ClearCacheRequest.java"></a>4.2.30 ClearCacheRequest.java</h4><p>用于人为清空 Http 缓存的请求。<br>添加到 RequestQueue 后能很快执行，因为优先级很高，为<code>Priority.IMMEDIATE</code>。并且清空缓存的方法<code>mCache.clear()</code>写在了<code>isCanceled()</code>方法体中，能最早的得到执行。  </p>
+<p>ClearCacheRequest 的写法不敢苟同，目前看来唯一的好处就是可以将清空缓存操作也当做一个请求。而在<code>isCanceled()</code>中做清空操作本身就造成了歧义，不看源码没人知道在<code>NetworkDispatcher</code> run 方法循环的过程中，<code>isCanceled()</code>这个读操作竟然做了可能造成缓存被清空。只能跟源码的解释一样当做一个 Hack 操作。  </p>
+<h4 id="4-2-31-Authenticator-java"><a href="#4-2-31-Authenticator-java" class="headerlink" title="4.2.31 Authenticator.java"></a>4.2.31 Authenticator.java</h4><p>身份认证接口，用于基本认证或者摘要认证。这个类是 Volley 用于和身份验证打通的接口，比如 OAuth，不过目前的使用不是特别广泛和 Volley 的内部结合也不是特别紧密。  </p>
+<h4 id="4-2-32-AndroidAuthenticator-java"><a href="#4-2-32-AndroidAuthenticator-java" class="headerlink" title="4.2.32 AndroidAuthenticator.java"></a>4.2.32 AndroidAuthenticator.java</h4><p>继承 Authenticator，基于 Android AccountManager 的认证交互实现类。  </p>
+<h4 id="4-2-33-VolleyLog-java"><a href="#4-2-33-VolleyLog-java" class="headerlink" title="4.2.33 VolleyLog.java"></a>4.2.33 VolleyLog.java</h4><p>Volley 的 Log 工具类。  </p>
+<h4 id="4-2-34-VolleyError-java"><a href="#4-2-34-VolleyError-java" class="headerlink" title="4.2.34 VolleyError.java"></a>4.2.34 VolleyError.java</h4><p>Volley 中所有错误异常的父类，继承自 Exception，可通过此类设置和获取 NetworkResponse 或者请求的耗时。  </p>
+<h4 id="4-2-35-AuthFailureError-java"><a href="#4-2-35-AuthFailureError-java" class="headerlink" title="4.2.35 AuthFailureError.java"></a>4.2.35 AuthFailureError.java</h4><p>继承自 VolleyError，代表请求认证失败错误，如 RespondeCode 的 401 和 403。  </p>
+<h4 id="4-2-36-NetworkError-java"><a href="#4-2-36-NetworkError-java" class="headerlink" title="4.2.36 NetworkError.java"></a>4.2.36 NetworkError.java</h4><p>继承自 VolleyError，代表网络错误。  </p>
+<h4 id="4-2-37-ParseError-java"><a href="#4-2-37-ParseError-java" class="headerlink" title="4.2.37 ParseError.java"></a>4.2.37 ParseError.java</h4><p>继承自 VolleyError，代表内容解析错误。  </p>
+<h4 id="4-2-38-ServerError-java"><a href="#4-2-38-ServerError-java" class="headerlink" title="4.2.38 ServerError.java"></a>4.2.38 ServerError.java</h4><p>继承自 VolleyError，代表服务端错误。  </p>
+<h4 id="4-2-39-TimeoutError-java"><a href="#4-2-39-TimeoutError-java" class="headerlink" title="4.2.39 TimeoutError.java"></a>4.2.39 TimeoutError.java</h4><p>继承自 VolleyError，代表请求超时错误。  </p>
+<h4 id="4-2-40-NoConnectionError-java"><a href="#4-2-40-NoConnectionError-java" class="headerlink" title="4.2.40 NoConnectionError.java"></a>4.2.40 NoConnectionError.java</h4><p>继承自NetworkError，代表无法建立连接错误。  </p>
+<h3 id="5-杂谈"><a href="#5-杂谈" class="headerlink" title="5. 杂谈"></a>5. 杂谈</h3><h4 id="5-1-关于-Http-缓存"><a href="#5-1-关于-Http-缓存" class="headerlink" title="5.1 关于 Http 缓存"></a>5.1 关于 Http 缓存</h4><p>Volley 构建了一套相对完整的符合 Http 语义的缓存机制。<br><strong>优点和特点</strong><br>(1). 根据<code>Cache-Control</code>和<code>Expires</code>首部来计算缓存的过期时间。如果两个首部都存在情况下，以<code>Cache-Control</code>为准。<br>(2). 利用<code>If-None-Match</code>和<code>If-Modified-Since</code>对过期缓存或者不新鲜缓存，进行请求再验证，并处理 304 响应，更新缓存。<br>(3). 默认的缓存实现，将缓存以文件的形式存储在 Disk，程序退出后不会丢失。</p>
+<p><strong>我个人认为的不足之处</strong><br>缓存的再验证方面，在构建<code>If-Modified-Since</code>请求首部时，Volley 使用了服务端响应的<code>Date</code>首部，没有使用<code>Last-Modified</code>首部。整个框架没有使用<code>Last-Modified</code>首部。这与 Http 语义不符。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">addCacheHeaders</span><span class="params">(Map&lt;String, String&gt; headers, Cache.Entry entry)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// If there's no cache entry, we're done.</span></span><br><span class="line">    <span class="keyword">if</span> (entry == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (entry.etag != <span class="keyword">null</span>) &#123;</span><br><span class="line">        headers.put(<span class="string">"If-None-Match"</span>, entry.etag);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (entry.serverDate &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        Date refTime = <span class="keyword">new</span> Date(entry.serverDate);</span><br><span class="line">        headers.put(<span class="string">"If-Modified-Since"</span>, DateUtils.formatDate(refTime));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>服务端根据请求时通过<code>If-Modified-Since</code>首部传过来的时间，判断资源文件是否在<code>If-Modified-Since</code>时间 <strong>以后</strong> 有改动，如果有改动，返回新的请求结果。如果没有改动，返回 304 not modified。<br><code>Last-Modified</code>代表了资源文件的最后修改时间。通常使用这个首部构建<code>If-Modified-Since</code>的时间。<br><code>Date</code>代表了响应产生的时间，正常情况下<code>Date</code>时间在<code>Last-Modified</code>时间之后。也就是<code>Date</code>&gt;=<code>Last-Modified</code>。<br>通过以上原理，既然<code>Date</code>&gt;=<code>Last-Modified</code>。那么我利用<code>Date</code>构建，也是完全正确的。  </p>
+<p><strong>可能的问题出在服务端的 Http 实现上，如果服务端完全遵守 Http 语义，采用时间比较的方式来验证<code>If-Modified-Since</code>，判断服务器资源文件修改时间是不是在<code>If-Modified-Since</code>之后。那么使用<code>Date</code>完全正确。</strong><br><strong>可是有的服务端实现不是比较时间，而是直接的判断服务器资源文件修改时间，是否和<code>If-Modified-Since</code>所传时间相等。这样使用<code>Date</code>就不能实现正确的再验证，因为<code>Date</code>的时间总不会和服务器资源文件修改时间相等。</strong>  </p>
+<p>尽管使用<code>Date</code>可能出现的不正确情况，归结于服务端没有正确的实现 Http 语义。<br><strong>但我还是希望Volley也能完全正确的实现Http语义，至少同时处理<code>Last-Modified</code>和<code>Date</code>,并且优先使用<code>Last-Modified</code>。</strong>  </p>
+<h4 id="5-2-Bug"><a href="#5-2-Bug" class="headerlink" title="5.2 Bug"></a>5.2 Bug</h4><h5 id="1-BasicNetwork-performRequest-…"><a href="#1-BasicNetwork-performRequest-…" class="headerlink" title="(1). BasicNetwork.performRequest(…)"></a>(1). BasicNetwork.performRequest(…)</h5><p>如下代码：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> NetworkResponse <span class="title">performRequest</span><span class="params">(Request&lt;?&gt; request)</span> <span class="keyword">throws</span> VolleyError </span>&#123;</span><br><span class="line">    ……</span><br><span class="line">    <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">        ……</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            ……</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            <span class="keyword">int</span> statusCode = <span class="number">0</span>;</span><br><span class="line">            NetworkResponse networkResponse = <span class="keyword">null</span>;</span><br><span class="line">            ……</span><br><span class="line">            <span class="keyword">if</span> (responseContents != <span class="keyword">null</span>) &#123;</span><br><span class="line">              ……</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> NetworkError(networkResponse);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>BasicNetwork.performRequest(…) 最后的<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">throw</span> <span class="keyword">new</span> NetworkError(networkResponse);</span><br></pre></td></tr></table></figure></p>
+<p>应该是<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">throw</span> <span class="keyword">new</span> NetworkError(e);</span><br></pre></td></tr></table></figure></p>
+<p>更合理。  </p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij</li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.diyfuture.cn/2015/02/01/Volley.html" title="Volley 源码解析">http://www.diyfuture.cn/2015/02/01/Volley.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="" rel="external nofollow" target="_blank">转载必须联系作者</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/android/" rel="tag"># android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/01/25/xutils.html" rel="next" title="xUtils 源码解析">
+                <i class="fa fa-chevron-left"></i> xUtils 源码解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/07/01/下半年的计划.html" rel="prev" title="下半年计划">
+                下半年计划 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caij</p>
+              <p class="site-description motion-element" itemprop="description">厚积薄发</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">43</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">tags</span>
+                  
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/caij" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-功能介绍"><span class="nav-number">1.</span> <span class="nav-text">1. 功能介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-Volley"><span class="nav-number">1.1.</span> <span class="nav-text">1.1. Volley</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-Volley-的主要特点"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 Volley 的主要特点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-总体设计"><span class="nav-number">2.</span> <span class="nav-text">2. 总体设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-总体设计图"><span class="nav-number">2.1.</span> <span class="nav-text">2.1. 总体设计图</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-Volley-中的概念"><span class="nav-number">2.2.</span> <span class="nav-text">2.2. Volley 中的概念</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-流程图"><span class="nav-number">3.</span> <span class="nav-text">3. 流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-详细设计"><span class="nav-number">4.</span> <span class="nav-text">4. 详细设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-类关系图"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 类关系图</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-核心类功能介绍"><span class="nav-number">5.</span> <span class="nav-text">4.2 核心类功能介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-1-Volley-java"><span class="nav-number">5.1.</span> <span class="nav-text">4.2.1 Volley.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-2-Request-java"><span class="nav-number">5.2.</span> <span class="nav-text">4.2.2 Request.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-3-RequestQueue-java"><span class="nav-number">5.3.</span> <span class="nav-text">4.2.3 RequestQueue.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-主要成员变量"><span class="nav-number">5.4.</span> <span class="nav-text">(1). 主要成员变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-启动队列"><span class="nav-number">5.5.</span> <span class="nav-text">(2). 启动队列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-加入请求"><span class="nav-number">5.6.</span> <span class="nav-text">(3). 加入请求</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-请求完成"><span class="nav-number">5.7.</span> <span class="nav-text">(4). 请求完成</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-请求取消"><span class="nav-number">5.8.</span> <span class="nav-text">(5). 请求取消</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-4-CacheDispatcher-java"><span class="nav-number">5.9.</span> <span class="nav-text">4.2.4 CacheDispatcher.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-处理流程图"><span class="nav-number">5.10.</span> <span class="nav-text">(2). 处理流程图</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-5-NetworkDispatcher-java"><span class="nav-number">5.11.</span> <span class="nav-text">4.2.5 NetworkDispatcher.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-成员变量"><span class="nav-number">5.12.</span> <span class="nav-text">(1). 成员变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-处理流程图-1"><span class="nav-number">5.13.</span> <span class="nav-text">(2). 处理流程图</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-6-Cache-java"><span class="nav-number">5.14.</span> <span class="nav-text">4.2.6 Cache.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-主要方法："><span class="nav-number">5.15.</span> <span class="nav-text">(1). 主要方法：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-代表缓存实体的内部类-Entry"><span class="nav-number">5.16.</span> <span class="nav-text">(2). 代表缓存实体的内部类 Entry</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-7-DiskBasedCache-java"><span class="nav-number">5.17.</span> <span class="nav-text">4.2.7 DiskBasedCache.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-主要方法：-1"><span class="nav-number">5.18.</span> <span class="nav-text">(1). 主要方法：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-CacheHeader-类"><span class="nav-number">5.19.</span> <span class="nav-text">(2). CacheHeader 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-8-NoCache-java"><span class="nav-number">5.20.</span> <span class="nav-text">4.2.8 NoCache.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-9-Network-java"><span class="nav-number">5.21.</span> <span class="nav-text">4.2.9 Network.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-10-NetworkResponse-java"><span class="nav-number">5.22.</span> <span class="nav-text">4.2.10 NetworkResponse.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-成员变量-1"><span class="nav-number">5.23.</span> <span class="nav-text">(1). 成员变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Volley-的内部-Response-转换流程图"><span class="nav-number">5.24.</span> <span class="nav-text">(2). Volley 的内部 Response 转换流程图</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-11-BasicNetwork-java"><span class="nav-number">5.25.</span> <span class="nav-text">4.2.11 BasicNetwork.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-12-HttpStack-java"><span class="nav-number">5.26.</span> <span class="nav-text">4.2.12 HttpStack.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-13-HttpClientStack-java"><span class="nav-number">5.27.</span> <span class="nav-text">4.2.13 HttpClientStack.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-15-Response-java"><span class="nav-number">5.28.</span> <span class="nav-text">4.2.15 Response.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-16-ByteArrayPool-java"><span class="nav-number">5.29.</span> <span class="nav-text">4.2.16 ByteArrayPool.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-17-PoolingByteArrayOutputStream-java"><span class="nav-number">5.30.</span> <span class="nav-text">4.2.17 PoolingByteArrayOutputStream.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-18-HttpHeaderParser-java"><span class="nav-number">5.31.</span> <span class="nav-text">4.2.18 HttpHeaderParser.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-19-RetryPolicy-java"><span class="nav-number">5.32.</span> <span class="nav-text">4.2.19 RetryPolicy.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-20-DefaultRetryPolicy-java"><span class="nav-number">5.33.</span> <span class="nav-text">4.2.20 DefaultRetryPolicy.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-21-ResponseDelivery-java"><span class="nav-number">5.34.</span> <span class="nav-text">4.2.21 ResponseDelivery.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-22-ExecutorDelivery-java"><span class="nav-number">5.35.</span> <span class="nav-text">4.2.22 ExecutorDelivery.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-23-StringRequest-java"><span class="nav-number">5.36.</span> <span class="nav-text">4.2.23 StringRequest.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-24-JsonRequest-java"><span class="nav-number">5.37.</span> <span class="nav-text">4.2.24 JsonRequest.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-25-JsonObjectRequest-java"><span class="nav-number">5.38.</span> <span class="nav-text">4.2.25 JsonObjectRequest.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-26-JsonArrayRequest-java"><span class="nav-number">5.39.</span> <span class="nav-text">4.2.26 JsonArrayRequest.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-27-ImageRequest-java"><span class="nav-number">5.40.</span> <span class="nav-text">4.2.27 ImageRequest.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-28-ImageLoader-java"><span class="nav-number">5.41.</span> <span class="nav-text">4.2.28 ImageLoader.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-29-NetworkImageView-java"><span class="nav-number">5.42.</span> <span class="nav-text">4.2.29 NetworkImageView.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-30-ClearCacheRequest-java"><span class="nav-number">5.43.</span> <span class="nav-text">4.2.30 ClearCacheRequest.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-31-Authenticator-java"><span class="nav-number">5.44.</span> <span class="nav-text">4.2.31 Authenticator.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-32-AndroidAuthenticator-java"><span class="nav-number">5.45.</span> <span class="nav-text">4.2.32 AndroidAuthenticator.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-33-VolleyLog-java"><span class="nav-number">5.46.</span> <span class="nav-text">4.2.33 VolleyLog.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-34-VolleyError-java"><span class="nav-number">5.47.</span> <span class="nav-text">4.2.34 VolleyError.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-35-AuthFailureError-java"><span class="nav-number">5.48.</span> <span class="nav-text">4.2.35 AuthFailureError.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-36-NetworkError-java"><span class="nav-number">5.49.</span> <span class="nav-text">4.2.36 NetworkError.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-37-ParseError-java"><span class="nav-number">5.50.</span> <span class="nav-text">4.2.37 ParseError.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-38-ServerError-java"><span class="nav-number">5.51.</span> <span class="nav-text">4.2.38 ServerError.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-39-TimeoutError-java"><span class="nav-number">5.52.</span> <span class="nav-text">4.2.39 TimeoutError.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-40-NoConnectionError-java"><span class="nav-number">5.53.</span> <span class="nav-text">4.2.40 NoConnectionError.java</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-杂谈"><span class="nav-number">6.</span> <span class="nav-text">5. 杂谈</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-1-关于-Http-缓存"><span class="nav-number">6.1.</span> <span class="nav-text">5.1 关于 Http 缓存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-2-Bug"><span class="nav-number">6.2.</span> <span class="nav-text">5.2 Bug</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-BasicNetwork-performRequest-…"><span class="nav-number">6.2.1.</span> <span class="nav-text">(1). BasicNetwork.performRequest(…)</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: true,
+        notify: true,
+        appId: 'X19irIYkwb0IQJHtEK8ce5vp-gzGzoHsz',
+        appKey: '857eSi9xXR6h1jtyYzDmDHHG',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        meta:guest,
+        pageSize:'10' || 10,
+        visitor: false
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

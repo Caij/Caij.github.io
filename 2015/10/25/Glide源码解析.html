@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="在泰国举行的谷歌开发者论坛上，谷歌为我们介绍了一个名叫 Glide 的图片加载库，作者是bumptech。这个库被广泛的运用在google的开源项目中，包括2014年google I/O大会上发布的官方app。Glide和Picasso使用上有90%的相似度，但是内部实现机制有很大区别   Glide介绍。">
+<meta name="keywords" content="android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Glide 源码解析">
+<meta property="og:url" content="http://www.diyfuture.cn/2015/10/25/Glide源码解析.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="在泰国举行的谷歌开发者论坛上，谷歌为我们介绍了一个名叫 Glide 的图片加载库，作者是bumptech。这个库被广泛的运用在google的开源项目中，包括2014年google I/O大会上发布的官方app。Glide和Picasso使用上有90%的相似度，但是内部实现机制有很大区别   Glide介绍。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.diyfuture.cn/image/glide/design.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/glide/all_sque.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/glide/request_manager_create.png">
+<meta property="og:updated_time" content="2016-08-03T03:36:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Glide 源码解析">
+<meta name="twitter:description" content="在泰国举行的谷歌开发者论坛上，谷歌为我们介绍了一个名叫 Glide 的图片加载库，作者是bumptech。这个库被广泛的运用在google的开源项目中，包括2014年google I/O大会上发布的官方app。Glide和Picasso使用上有90%的相似度，但是内部实现机制有很大区别   Glide介绍。">
+<meta name="twitter:image" content="http://www.diyfuture.cn/image/glide/design.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://www.diyfuture.cn/2015/10/25/Glide源码解析.html"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Glide 源码解析 | Caij</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">厚积薄发</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br />About</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="Searching..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.diyfuture.cn/2015/10/25/Glide源码解析.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Glide 源码解析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-10-25 00:00:00" itemprop="dateCreated datePublished" datetime="2015-10-25T00:00:00+08:00">2015-10-25</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/图片加载/" itemprop="url" rel="index"><span itemprop="name">图片加载</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/10/25/Glide源码解析.html#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">Comments: </span> <span class="post-comments-count valine-comment-count" data-xid="/2015/10/25/Glide源码解析.html" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在泰国举行的谷歌开发者论坛上，谷歌为我们介绍了一个名叫 Glide 的图片加载库，作者是bumptech。这个库被广泛的运用在google的开源项目中，包括2014年google I/O大会上发布的官方app。Glide和Picasso使用上有90%的相似度，但是内部实现机制有很大区别   <a href="http://blog.csdn.net/theone10211024/article/details/45557859" target="_blank" rel="noopener">Glide介绍</a>。 </p>
+<a id="more"></a> 
+<h3 id="1-主要特点"><a href="#1-主要特点" class="headerlink" title="1.主要特点"></a>1.主要特点</h3><p>(1)支持Memory和Disk图片缓存。<br>(2)支持gif和webp格式图片。<br>(3)根据Activity/Fragment生命周期自动管理请求。<br>(4)使用Bitmap Pool可以使Bitmap复用。<br>(5)对于回收的Bitmap会主动调用recycle，减小系统回收压力。  </p>
+<h3 id="2-总体设计"><a href="#2-总体设计" class="headerlink" title="2. 总体设计"></a>2. 总体设计</h3><p><img src="/image/glide/design.png" alt="总体设计图">  </p>
+<h4 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h4><p><strong>RequestManager：</strong>请求管理，每一个Activity都会创建一个RequestManager，根据对应Activity的生命周期管理该Activity上所以的图片请求。  </p>
+<p><strong>Engine：</strong>加载图片的引擎，根据Request创建EngineJob和DecodeJob。  </p>
+<p><strong>EngineJob：</strong>图片加载。  </p>
+<p><strong>DecodeJob：</strong>图片处理。  </p>
+<h4 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h4><p>这里是大概的总体流程图， 具体的细节中流程下面继续分析。<br><img src="/image/glide/all_sque.png" alt="总体流程图">  </p>
+<h3 id="3-核心类介绍"><a href="#3-核心类介绍" class="headerlink" title="3. 核心类介绍"></a>3. 核心类介绍</h3><p><strong>3.1 Gilde</strong><br>用于保存整个框架中的配置。  </p>
+<p>重要方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> RequestManager <span class="title">with</span><span class="params">(FragmentActivity activity)</span> </span>&#123;</span><br><span class="line">	RequestManagerRetriever retriever = RequestManagerRetriever.get();</span><br><span class="line">	<span class="keyword">return</span> retriever.get(activity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>用于创建RequestManager，这里是Glide通过Activity/Fragment生命周期管理Request原理所在，这个类很关键、很关键、很关键，重要的事情我只说三遍。<br>主要原理是创建一个自定义Fragment，然后通过自定义Fragment生命周期操作RequestManager，从而达到管理Request。  </p>
+<p><img src="/image/glide/request_manager_create.png" alt="RequestManager创建流程图">  </p>
+<p><strong>3.2 RequestManagerRetriever</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">RequestManager <span class="title">supportFragmentGet</span><span class="params">(Context context, FragmentManager fm)</span> </span>&#123;</span><br><span class="line">	SupportRequestManagerFragment current = getSupportRequestManagerFragment(fm);</span><br><span class="line">	RequestManager requestManager = current.getRequestManager();</span><br><span class="line">	<span class="keyword">if</span> (requestManager == <span class="keyword">null</span>) &#123;</span><br><span class="line">		requestManager = <span class="keyword">new</span> RequestManager(context, current.getLifecycle(), current.getRequestManagerTreeNode());</span><br><span class="line">		current.setRequestManager(requestManager);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> requestManager;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里判断是否只当前RequestManagerFragment是否存在RequestManager，保证一个Activity对应一个RequestManager， 这样有利于管理一个Activity上所有的Request。创建RequestManager的时候会将RequestManagerFragment中的回调接口赋值给RequestManager，达到RequestManager监听RequestManagerFragment的生命周期。  </p>
+<p><strong>3.3 RequestManager</strong><br>成员变量：<br>(1)Lifecycle lifecycle,用于监听RequestManagerFragment生命周期。<br>(2)RequestTracker requestTracker, 用于保存当前RequestManager所有的请求和带处理的请求。  </p>
+<p>重要方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="comment">//开始暂停的请求</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onStart</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	resumeRequests();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//停止所有的请求</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onStop</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	pauseRequests();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//关闭所以的请求</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onDestroy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	requestTracker.clearRequests();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建RequestBuild</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> DrawableTypeRequest&lt;String&gt; <span class="title">load</span><span class="params">(String string)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> (DrawableTypeRequest&lt;String&gt;) fromString().load(string);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> &lt;Y extends Target&lt;TranscodeType&gt;&gt; <span class="function">Y <span class="title">into</span><span class="params">(Y target)</span> </span>&#123;</span><br><span class="line">	...</span><br><span class="line">	Request previous = target.getRequest();</span><br><span class="line">	<span class="comment">//停止当前target中的Request。</span></span><br><span class="line">	<span class="keyword">if</span> (previous != <span class="keyword">null</span>) &#123;</span><br><span class="line">		previous.clear(); <span class="comment">//这个地方很关键，见Request解析</span></span><br><span class="line">		requestTracker.removeRequest(previous);</span><br><span class="line">		previous.recycle();</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">return</span> target;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><strong>3.4 DrawableRequestBuilder</strong><br>用于创建Request。  这里面包括很多方法，主要是配置加载图片的url、大小、动画、ImageView对象、自定义图片处理接口等。  </p>
+<p><strong>3.5 Request</strong><br>主要是操作请求，方法都很简单。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">if</span> (resource != <span class="keyword">null</span>) &#123;</span><br><span class="line">		<span class="comment">//这里会释放资源</span></span><br><span class="line">		releaseResource(resource);</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里的基本原理是当有Target使用Resource（Resource见下文）时，Resource中的引用记数值会加一，当释放资源Resource中的引用记数值减一。当没有Target使用的时候就会释放资源，放进Lrucache中。  </p>
+<p><strong>3.7 EngineResource</strong><br>实现Resource接口，使用装饰模式，里面包含实际的Resource对象<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">release</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (--acquired == <span class="number">0</span>) &#123;</span><br><span class="line">		listener.onResourceReleased(key, <span class="keyword">this</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;  </span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">acquire</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	++acquired;</span><br><span class="line">&#125;  </span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">recycle</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	isRecycled = <span class="keyword">true</span>;</span><br><span class="line">	resource.recycle();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>acquire和release两个方法是对资源引用计数；recycle释放资源，一般在Lrucache饱和时会触发。</p>
+<p><strong>3.8 Engine（重要）</strong><br>请求引擎，主要做请求的开始的初始化。  </p>
+<p><strong>3.8.1 load方法</strong><br>这个方法很长，将分为几步分析  </p>
+<p>(1)获取MemoryCache中缓存<br>首先创建当前Request的缓存key，通过key值从MemoryCache中获取缓存，判断缓存是否存在。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">private</span> EngineResource&lt;?&gt; loadFromCache(Key key, <span class="keyword">boolean</span> isMemoryCacheable) &#123;</span><br><span class="line">	....</span><br><span class="line">	EngineResource&lt;?&gt; cached = getEngineResourceFromCache(key);</span><br><span class="line">	<span class="keyword">if</span> (cached != <span class="keyword">null</span>) &#123;</span><br><span class="line">		cached.acquire();</span><br><span class="line">		activeResources.put(key, <span class="keyword">new</span> ResourceWeakReference(key, cached, getReferenceQueue()));</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> cached;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line"><span class="keyword">private</span> EngineResource&lt;?&gt; getEngineResourceFromCache(Key key) &#123;</span><br><span class="line">	Resource&lt;?&gt; cached = cache.remove(key);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">final</span> EngineResource result;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>（重点）从缓存中获取的时候使用的cache.remove(key),然后将值保存在activeResources中，然后将Resource的引用计数加一。<br>优点：  </p>
+<blockquote>
+<p>正使用的Resource将会在activeResources中，不会出现在cache中，当BitmapPool中缓存饱和的时候或者系统内存不足的时候，清理Bitmap可以直接调用recycle,不用考虑Bitmap正在使用导致异常，加快系统的回收。  </p>
+</blockquote>
+<hr>
+<p>(2)获取activeResources中缓存<br>activeResources通过弱引用保存recouse ，也是通过key获取缓存， </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> EngineResource&lt;?&gt; loadFromActiveResources(Key key, <span class="keyword">boolean</span> isMemoryCacheable)</span><br></pre></td></tr></table></figure>
+<hr>
+<p>(3)判断当前的请求任务是否已经存在<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">EngineJob current = jobs.get(key);</span><br><span class="line"><span class="keyword">if</span> (current != <span class="keyword">null</span>) &#123;</span><br><span class="line">	current.addCallback(cb);</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">new</span> LoadStatus(cb, current);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果任务请求已经存在，直接将回调事件传递给已经存在的EngineJob，用于请求成功后触发回调。  </p>
+<hr>
+<p>(4)执行请求任务<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">EngineJob engineJob = engineJobFactory.build(key, isMemoryCacheable);</span><br><span class="line">DecodeJob&lt;T, Z, R&gt; decodeJob = <span class="keyword">new</span> DecodeJob&lt;T, Z, R&gt;(key, width, height, fetcher, loadProvider, transformation,</span><br><span class="line">		transcoder, diskCacheProvider, diskCacheStrategy, priority);</span><br><span class="line">EngineRunnable runnable = <span class="keyword">new</span> EngineRunnable(engineJob, decodeJob, priority);</span><br><span class="line">jobs.put(key, engineJob);</span><br><span class="line">engineJob.addCallback(cb);</span><br><span class="line">engineJob.start(runnable);</span><br></pre></td></tr></table></figure></p>
+<p><strong>3.9 EngineRunnable</strong><br>请求执行Runnable，主要功能请求资源、处理资源、缓存资源。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">private</span> Resource&lt;?&gt; decodeFromCache() <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">	Resource&lt;?&gt; result = <span class="keyword">null</span>;</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		result = decodeJob.decodeResultFromCache();</span><br><span class="line">	&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">		<span class="keyword">if</span> (Log.isLoggable(TAG, Log.DEBUG)) &#123;</span><br><span class="line">			Log.d(TAG, <span class="string">"Exception decoding result from cache: "</span> + e);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (result == <span class="keyword">null</span>) &#123;</span><br><span class="line">		result = decodeJob.decodeSourceFromCache();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> result;</span><br><span class="line">&#125;  </span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Resource&lt;?&gt; decodeFromSource() <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">	<span class="keyword">return</span> decodeJob.decodeFromSource();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>加载DiskCache和网络资源。加载DiskCache包括两个，因为Glide默认是保存处理后的资源（压缩和裁剪后），缓存方式可以自定义配置。如果客户端规范设计，ImageView大小大部分相同可以节省图片加载时间和Disk资源。</p>
+<p><strong>3.10 DecodeJob</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Resource&lt;Z&gt; <span class="title">decodeResultFromCache</span><span class="params">()</span> <span class="keyword">throws</span> Exception  </span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Resource&lt;Z&gt; <span class="title">decodeSourceFromCache</span><span class="params">()</span> <span class="keyword">throws</span> Exception</span></span><br></pre></td></tr></table></figure></p>
+<p>从缓存中获取处理后的资源。上面有关Key的内容，Key是一个对象，可以获取key和orginKey。decodeResultFromCache就是通过key获取缓存，decodeSourceFromCache()就是通过orginKey获取缓存。  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Resource&lt;Z&gt; <span class="title">transformEncodeAndTranscode</span><span class="params">(Resource&lt;T&gt; decoded)</span></span></span><br></pre></td></tr></table></figure>
+<p>处理和包装资源；缓存资源。  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//保存原资源</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> Resource&lt;T&gt; <span class="title">cacheAndDecodeSourceData</span><span class="params">(A data)</span> <span class="keyword">throws</span> IOException  </span></span><br><span class="line"><span class="function"><span class="comment">//保存处理后的资源</span></span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">writeTransformedToCache</span><span class="params">(Resource&lt;T&gt; transformed)</span></span></span><br></pre></td></tr></table></figure>
+<p><strong>3.11 Transformation</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Resource&lt;T&gt; <span class="title">transform</span><span class="params">(Resource&lt;T&gt; resource, <span class="keyword">int</span> outWidth, <span class="keyword">int</span> outHeight)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>处理资源，这里面会从BitmapPool中获取缓存Bitmap，如果有的话直接将缓存的Bitmap当成画布，如果达到Bitmap复用， 对于处理前的资源直接回收到 BitmapPool中。</p>
+<p><strong>3.12 ResourceDecoder</strong><br>用于将文件、IO流转化为Resource   </p>
+<p><strong>3.13BitmapPool</strong><br>用于存放从LruCache中remove的Bitmap， 用于后面创建Bitmap时候的重复利用。 </p>
+<h3 id="4-杂谈"><a href="#4-杂谈" class="headerlink" title="4.杂谈"></a>4.杂谈</h3><p>Glide的架构扩展性高，但是难以理解，各种接口、泛型，需要一定的学习才能熟练运用。  </p>
+<p>Glide的优点：  </p>
+<p>(1)支持对处理后的资源DiskCache。<br>(2)支持inBitmap高级特性（详情Google）。<br>(3)使用巧妙的设计：使用BitmapPool减少内存抖动;通过弱引用activityResources缓存正在使用的resource，而不是在MemoryCache，在内存不足的时候，MemoryCache中的图片会移除到itmapPool中，对于BitmapPool饱和移除的Bitmap可以直接调用recycle。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij</li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.diyfuture.cn/2015/10/25/Glide源码解析.html" title="Glide 源码解析">http://www.diyfuture.cn/2015/10/25/Glide源码解析.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="" rel="external nofollow" target="_blank">转载必须联系作者</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/android/" rel="tag"># android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/10/16/图片两级缓存解析.html" rel="next" title="图片两级缓存解析">
+                <i class="fa fa-chevron-left"></i> 图片两级缓存解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/01/01/2015的总结和2016的展望.html" rel="prev" title="2015->2016总结和展望">
+                2015->2016总结和展望 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caij</p>
+              <p class="site-description motion-element" itemprop="description">厚积薄发</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">43</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">tags</span>
+                  
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/caij" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-主要特点"><span class="nav-number">1.</span> <span class="nav-text">1.主要特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-总体设计"><span class="nav-number">2.</span> <span class="nav-text">2. 总体设计</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#基本概念"><span class="nav-number">2.1.</span> <span class="nav-text">基本概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#流程图"><span class="nav-number">2.2.</span> <span class="nav-text">流程图</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-核心类介绍"><span class="nav-number">3.</span> <span class="nav-text">3. 核心类介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-杂谈"><span class="nav-number">4.</span> <span class="nav-text">4.杂谈</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: true,
+        notify: true,
+        appId: 'X19irIYkwb0IQJHtEK8ce5vp-gzGzoHsz',
+        appKey: '857eSi9xXR6h1jtyYzDmDHHG',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        meta:guest,
+        pageSize:'10' || 10,
+        visitor: false
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

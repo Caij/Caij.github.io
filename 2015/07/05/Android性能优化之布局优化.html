@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="&amp;emsp; &amp;emsp;Android性能优化之布局优化，主要介绍使用抽象布局标签(include, viewstub, merge)、合理编写Layout。">
+<meta name="keywords" content="android,性能优化">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android性能优化之布局优化">
+<meta property="og:url" content="http://www.diyfuture.cn/2015/07/05/Android性能优化之布局优化.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="&amp;emsp; &amp;emsp;Android性能优化之布局优化，主要介绍使用抽象布局标签(include, viewstub, merge)、合理编写Layout。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.diyfuture.cn/image/optimize/view_stub2.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/optimize/view_stub1.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/optimize/a1.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/optimize/a2.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/optimize/b1.png">
+<meta property="og:image" content="http://www.diyfuture.cn/image/optimize/b2.png">
+<meta property="og:updated_time" content="2016-08-03T03:36:04.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android性能优化之布局优化">
+<meta name="twitter:description" content="&amp;emsp; &amp;emsp;Android性能优化之布局优化，主要介绍使用抽象布局标签(include, viewstub, merge)、合理编写Layout。">
+<meta name="twitter:image" content="http://www.diyfuture.cn/image/optimize/view_stub2.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://www.diyfuture.cn/2015/07/05/Android性能优化之布局优化.html"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Android性能优化之布局优化 | Caij</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">厚积薄发</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br />About</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="Searching..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.diyfuture.cn/2015/07/05/Android性能优化之布局优化.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android性能优化之布局优化
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-07-05 00:00:00" itemprop="dateCreated datePublished" datetime="2015-07-05T00:00:00+08:00">2015-07-05</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/07/05/Android性能优化之布局优化.html#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">Comments: </span> <span class="post-comments-count valine-comment-count" data-xid="/2015/07/05/Android性能优化之布局优化.html" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>&emsp; &emsp;Android性能优化之布局优化，主要介绍使用抽象布局标签(include, viewstub, merge)、合理编写Layout。  </p>
+<a id="more"></a>
+<p>Android系统布局一般都是通过系统的API将XML解析为View，然后渲染视图界面上。解析XML和渲染视图需要花费时间，合理的编写布局文件将减少花费的时间。  </p>
+<h3 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1.介绍"></a>1.介绍</h3><ul>
+<li>使用&lt; ViewStub /&gt;标签来加载一些不常用的布局；  </li>
+<li>将可复用的组件抽取出来并通过&lt; include /&gt;标签使用；  </li>
+<li>使用&lt; merge /&gt;标签减少布局的嵌套层次；</li>
+</ul>
+<h3 id="2-ViewStub的使用"><a href="#2-ViewStub的使用" class="headerlink" title="2.ViewStub的使用"></a>2.ViewStub的使用</h3><p>&emsp; &emsp;开发应用程序的时候，经常会遇到这样的情况，会在运行时动态根据条件来决定显示哪个View或某个布局。<br>那么最通常的想法就是把可能用到的View都写在上面，先把它们的可见性都设为View.GONE，然后在代码中动态的更改它的可见性。<br>这样的做法的优点是逻辑简单而且控制起来比较灵活。但是它的缺点就是，耗费资源。<br>虽然把View的初始可见View.GONE但是在Inflate布局的时候View仍然会被Inflate，也就是说仍然会创建对象，会被实例化，会被设置属性。<br>也就是说，会耗费时间和内存等资源。（比如QQ在无网络状态下上方的提醒）<br>&emsp; &emsp;使用android.view.ViewStub，ViewStub是一个轻量级的View，它一个看不见的，不占布局位置，占用资源非常小的控件。<br>可以为ViewStub指定一个布局，在Inflate布局的时候，只有ViewStub会被初始化，然后当ViewStub被设置为可见的时候，或是调用了ViewStub.inflate()的时候，<br>ViewStub所向的布局就会被Inflate和实例化，然后ViewStub的布局属性都会传给它所指向的布局。这样，就可以使用ViewStub来方便的在运行时，要还是不要显示某个布局。<br>&emsp; &emsp;首先来说说ViewStub的一些特点：<br>&emsp; &emsp;（1）ViewStub只能Inflate一次，之后ViewStub对象会被置为空。按句话说，某个被ViewStub指定的布局被Inflate后，就不会够再通过ViewStub来控制它了，可以使用成员变量保存Inflate后View。<br>&emsp; &emsp;（2）ViewStub只能用来Inflate一个布局文件，而不是某个具体的View，当然也可以把View写在某个布局文件中。<br>下面是Activity的布局和ViewStub的布局viewstub_layout </p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;RelativeLayout xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    xmlns:tools=<span class="string">"http://schemas.android.com/tools"</span></span><br><span class="line">    android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span></span><br><span class="line">    tools:context=<span class="string">".MainActivity"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;ViewStub</span><br><span class="line">        android:id=<span class="string">"@+id/view_stub"</span></span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout=<span class="string">"@layout/viewstub_layout"</span>/&gt;</span><br><span class="line"></span><br><span class="line">&lt;/RelativeLayout&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;RelativeLayout xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:layout_width=<span class="string">"match_parent"</span> android:layout_height=<span class="string">"match_parent"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">        android:text=<span class="string">"网络错误"</span>/&gt;</span><br><span class="line"></span><br><span class="line">&lt;/RelativeLayout&gt;</span><br></pre></td></tr></table></figure>
+<p>然后在MainActivity中使用和控制。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MainActivity</span> <span class="keyword">extends</span> <span class="title">ActionBarActivity</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> View mNetErrorView;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">(Bundle savedInstanceState)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate(savedInstanceState);</span><br><span class="line">        setContentView(R.layout.activity_main);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">onNetError</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (mNetErrorView != <span class="keyword">null</span>) &#123;</span><br><span class="line">            mNetErrorView.setVisibility(View.VISIBLE);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">//在需要的时候才inflate</span></span><br><span class="line">        ViewStub mViewStub = (ViewStub) findViewById(R.id.view_stub);</span><br><span class="line">        mNetErrorView = mViewStub.inflate();</span><br><span class="line">		mNetErrorView.setVisibility(View.VISIBLE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">onNetAvailable</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (mNetErrorView != <span class="keyword">null</span>) &#123;</span><br><span class="line">            mNetErrorView.setVisibility(View.GONE);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在mNetErrorView显示之前hierarchy viewer查看布局关系：<br><img src="/image/optimize/view_stub2.png" alt="布局关系图"><br>在mNetErrorView显示后hierarchy viewer查看布局关系：<br><img src="/image/optimize/view_stub1.png" alt="布局关系图">   </p>
+<h3 id="3-include的使用"><a href="#3-include的使用" class="headerlink" title="3.include的使用"></a>3.include的使用</h3><p>&emsp; &emsp;在实际开发中，有时候很多界面的某个模块的内容一样的时候，将相同模块放在一个XML布局文件中，通过使用include引用达到代码复用和易修改的效果。（比如带返回按钮的导航栏）<br>下面是布局文件的代码</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;LinearLayout xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:orientation=<span class="string">"vertical"</span> android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;include layout=<span class="string">"@layout/include_layout"</span></span><br><span class="line">        android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span>/&gt;</span><br><span class="line">    </span><br><span class="line">&lt;/LinearLayout&gt;</span><br></pre></td></tr></table></figure>
+<p>下面是include_layout的代码<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;LinearLayout xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:orientation=<span class="string">"vertical"</span> android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">        android:text=<span class="string">"@string/app_name"</span>/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;Button</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span> /&gt;</span><br><span class="line"></span><br><span class="line">&lt;/LinearLayout&gt;</span><br></pre></td></tr></table></figure></p>
+<h3 id="4-merge的使用"><a href="#4-merge的使用" class="headerlink" title="4.merge的使用"></a>4.merge的使用</h3><p>&emsp; &emsp;&lt; merge /&gt;标签的作用是合并UI布局，使用该标签能降低UI布局的嵌套层次。<br>&emsp; &emsp;merge标签可用于两种典型情况：<br>&emsp; &emsp;a.布局顶结点是FrameLayout且不需要设置background或padding等属性，可以用merge代替，因为Activity内容试图的parent view就是个FrameLayout，所以可以用merge消除只剩一个。<br>&emsp; &emsp;b.某布局作为子布局被其他布局include时，且父布局的的布局类型和子布局的类型相同（比如父布局是RelativeLayout，include的布局也是RelativeLayout），使用merge当作该布局的顶节点，这样在被引入时顶结点会自动被忽略，而将其子节点全部合并到主布局中。<br>&emsp; &emsp;c.这种情况和b类似，使用的是ViewStub引入其他布局。  </p>
+<h3 id="4-1-a种情景"><a href="#4-1-a种情景" class="headerlink" title="4.1 a种情景"></a>4.1 a种情景</h3><p>Activity ContentView的 Layout的顶节点是FrameLayout。Activity的setContentView其实是将view添加到一个FrameLayout的父布局中。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;FrameLayout xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:orientation=<span class="string">"vertical"</span> android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">        android:text=<span class="string">"@string/app_name"</span>/&gt;</span><br><span class="line"></span><br><span class="line">&lt;/FrameLayout&gt;</span><br></pre></td></tr></table></figure></p>
+<p>使用hierarchy viewer查看布局关系：<br><img src="/image/optimize/a1.png" alt="布局关系图"><br>将布局改为下面的代码<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;merge xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:orientation=<span class="string">"vertical"</span> android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">        android:text=<span class="string">"@string/app_name"</span>/&gt;</span><br><span class="line"></span><br><span class="line">&lt;/merge&gt;</span><br></pre></td></tr></table></figure></p>
+<p>使用hierarchy viewer查看布局关系：<br><img src="/image/optimize/a2.png" alt="布局关系图"></p>
+<h3 id="4-2-b种情景"><a href="#4-2-b种情景" class="headerlink" title="4.2 b种情景"></a>4.2 b种情景</h3><p>Activity的布局文件如下：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;RelativeLayout xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:orientation=<span class="string">"vertical"</span> android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">        android:text=<span class="string">"@string/app_name"</span></span><br><span class="line">        android:id=<span class="string">"@+id/tv"</span>/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;include layout=<span class="string">"@layout/include_layout"</span></span><br><span class="line">        android:layout_below=<span class="string">"@id/tv"</span></span><br><span class="line">        android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">        android:layout_height=<span class="string">"match_parent"</span>/&gt;</span><br><span class="line"></span><br><span class="line">&lt;/RelativeLayout&gt;</span><br></pre></td></tr></table></figure></p>
+<p> include_layout 的布局文件如下：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;RelativeLayout xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:orientation=<span class="string">"vertical"</span> android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">        android:text=<span class="string">"@string/app_name"</span>/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;Button</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span> /&gt;</span><br><span class="line"></span><br><span class="line">&lt;/RelativeLayout&gt;</span><br></pre></td></tr></table></figure></p>
+<p>使用hierarchy viewer查看布局关系：<br><img src="/image/optimize/b1.png" alt="布局关系图"><br>include_layout 修改后的布局文件如下：<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;merge xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:orientation=<span class="string">"vertical"</span> android:layout_width=<span class="string">"match_parent"</span></span><br><span class="line">    android:layout_height=<span class="string">"match_parent"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">        android:text=<span class="string">"@string/app_name"</span>/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;Button</span><br><span class="line">        android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">        android:layout_height=<span class="string">"wrap_content"</span> /&gt;</span><br><span class="line"></span><br><span class="line">&lt;/merge&gt;</span><br></pre></td></tr></table></figure></p>
+<p>使用hierarchy viewer查看布局关系：<br><img src="/image/optimize/b2.png" alt="布局关系图">  </p>
+<h3 id="4-3-c种情景和b类似，不作概述"><a href="#4-3-c种情景和b类似，不作概述" class="headerlink" title="4.3 c种情景和b类似，不作概述"></a>4.3 c种情景和b类似，不作概述</h3>
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij</li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.diyfuture.cn/2015/07/05/Android性能优化之布局优化.html" title="Android性能优化之布局优化">http://www.diyfuture.cn/2015/07/05/Android性能优化之布局优化.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="" rel="external nofollow" target="_blank">转载必须联系作者</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/android/" rel="tag"># android</a>
+          
+            <a href="/tags/性能优化/" rel="tag"># 性能优化</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/07/01/下半年的计划.html" rel="next" title="下半年计划">
+                <i class="fa fa-chevron-left"></i> 下半年计划
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/08/05/Android代码优化.html" rel="prev" title="Android性能优化之代码优化">
+                Android性能优化之代码优化 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caij</p>
+              <p class="site-description motion-element" itemprop="description">厚积薄发</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">43</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">tags</span>
+                  
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/caij" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-介绍"><span class="nav-number">1.</span> <span class="nav-text">1.介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-ViewStub的使用"><span class="nav-number">2.</span> <span class="nav-text">2.ViewStub的使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-include的使用"><span class="nav-number">3.</span> <span class="nav-text">3.include的使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-merge的使用"><span class="nav-number">4.</span> <span class="nav-text">4.merge的使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-a种情景"><span class="nav-number">5.</span> <span class="nav-text">4.1 a种情景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-b种情景"><span class="nav-number">6.</span> <span class="nav-text">4.2 b种情景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-c种情景和b类似，不作概述"><span class="nav-number">7.</span> <span class="nav-text">4.3 c种情景和b类似，不作概述</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: true,
+        notify: true,
+        appId: 'X19irIYkwb0IQJHtEK8ce5vp-gzGzoHsz',
+        appKey: '857eSi9xXR6h1jtyYzDmDHHG',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        meta:guest,
+        pageSize:'10' || 10,
+        visitor: false
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

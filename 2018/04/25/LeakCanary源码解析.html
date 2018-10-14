@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="LeakCanary是square公司发布的一款检测Activity内存泄漏的工具。项目地址">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LeakCanary源码解析">
+<meta property="og:url" content="http://www.diyfuture.cn/2018/04/25/LeakCanary源码解析.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="LeakCanary是square公司发布的一款检测Activity内存泄漏的工具。项目地址">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://www.diyfuture.cn/images/leakcanary/leakcanary_class.png">
+<meta property="og:image" content="http://www.diyfuture.cn/images/leakcanary/leankcanary_squ.png">
+<meta property="og:updated_time" content="2018-04-25T13:04:18.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LeakCanary源码解析">
+<meta name="twitter:description" content="LeakCanary是square公司发布的一款检测Activity内存泄漏的工具。项目地址">
+<meta name="twitter:image" content="http://www.diyfuture.cn/images/leakcanary/leakcanary_class.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://www.diyfuture.cn/2018/04/25/LeakCanary源码解析.html"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>LeakCanary源码解析 | Caij</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">厚积薄发</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br />About</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="Searching..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.diyfuture.cn/2018/04/25/LeakCanary源码解析.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">LeakCanary源码解析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-04-25 00:00:00" itemprop="dateCreated datePublished" datetime="2018-04-25T00:00:00+08:00">2018-04-25</time>
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/04/25/LeakCanary源码解析.html#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">Comments: </span> <span class="post-comments-count valine-comment-count" data-xid="/2018/04/25/LeakCanary源码解析.html" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>LeakCanary是square公司发布的一款检测Activity内存泄漏的工具。<a href="https://github.com/square/leakcanary" target="_blank" rel="noopener">项目地址</a><br><a id="more"></a>  </p>
+<h2 id="1-设计"><a href="#1-设计" class="headerlink" title="1 设计"></a>1 设计</h2><h3 id="1-1-类图"><a href="#1-1-类图" class="headerlink" title="1.1 类图"></a>1.1 类图</h3><p><img src="/images/leakcanary/leakcanary_class.png" alt="类图"></p>
+<h3 id="1-2-时序图"><a href="#1-2-时序图" class="headerlink" title="1.2 时序图"></a>1.2 时序图</h3><p><img src="/images/leakcanary/leankcanary_squ.png" alt="时序图"></p>
+<h2 id="2-核心类功能介绍"><a href="#2-核心类功能介绍" class="headerlink" title="2.核心类功能介绍"></a>2.核心类功能介绍</h2><h4 id="2-1-LeakCanary-java"><a href="#2-1-LeakCanary-java" class="headerlink" title="2.1 LeakCanary.java"></a>2.1 LeakCanary.java</h4><p>LeakCanary主要是一个工具类，构建<code>RefWatcher</code>对象。<br><strong>(1)主要函数</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> RefWatcher <span class="title">install</span><span class="params">(Application application)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">leakInfo</span><span class="params">(Context context, HeapDump heapDump, AnalysisResult result,</span></span></span><br><span class="line"><span class="function"><span class="params">      <span class="keyword">boolean</span> detailed)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<p>第一个方法主要是初始化安装LeakCanary模块，还包括一些舒适化参数的构建。<br>第二个方法是通过最后分析的Dump文件和结果构建输入字符串。这个方法后面在Activity上显示会使用到。</p>
+<h4 id="2-2-RefWatcherBuilder-java"><a href="#2-2-RefWatcherBuilder-java" class="headerlink" title="2.2 RefWatcherBuilder.java"></a>2.2 RefWatcherBuilder.java</h4><p>这个类主要是构建RefWatcher的包装类，它有个子类<code>ActivityRefWatcher</code>包含一些对Android的适配, 具体方法这里忽略，可以看下面<code>RefWatcher</code>包含成员变量。</p>
+<h4 id="2-3-ActivityRefWatcher-java"><a href="#2-3-ActivityRefWatcher-java" class="headerlink" title="2.3 ActivityRefWatcher.java"></a>2.3 ActivityRefWatcher.java</h4><p>这个类主要是创建App <code>ActivityLifecycleCallbacks</code>监听<code>Activity</code> destory事件，然后调用<code>RefWatcher</code>分析回收问题。<br><strong>(1)主要函数</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">watchActivities</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Make sure you don't get installed twice.</span></span><br><span class="line">  stopWatchingActivities();</span><br><span class="line">  application.registerActivityLifecycleCallbacks(lifecycleCallbacks);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">stopWatchingActivities</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  application.unregisterActivityLifecycleCallbacks(lifecycleCallbacks);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">onActivityDestroyed</span><span class="params">(Activity activity)</span> </span>&#123;</span><br><span class="line">  refWatcher.watch(activity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到主要是通过application.registerActivityLifecycleCallbacks的方式监听Activity生命周期，然后调用<code>refWatcher.watch(activity)</code></p>
+<h4 id="2-4-RefWatcher-java"><a href="#2-4-RefWatcher-java" class="headerlink" title="2.4 RefWatcher.java"></a>2.4 RefWatcher.java</h4><p>这个类是核心类，主要分析Activity是否被回收和生成Dump文件。<br><strong>(1)主要成员</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> WatchExecutor watchExecutor;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> DebuggerControl debuggerControl;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> GcTrigger gcTrigger;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> HeapDumper heapDumper;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Set&lt;String&gt; retainedKeys;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ReferenceQueue&lt;Object&gt; queue;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> HeapDump.Listener heapdumpListener;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ExcludedRefs excludedRefs;</span><br></pre></td></tr></table></figure></p>
+<p>watchExecutor：执行回收和dump文件处理的线程提供者。子类有<code>AndroidWatchExecutor</code>其实就是在子线程中处理。<br>debuggerControl: 主要判断当前APP是否以Debug模式运行。<br>gcTrigger：调用GC方法<br>heapDumper：生成内存快照文件<br>retainedKeys： 存放key值，每个key对应一个Activity的虚引用。<br>queue： 负责存放虚引用对象释放完的队列。<br>heapdumpListener： 处理Dump信息<br>excludedRefs： 忽略一个内存泄漏的方法。<br><strong>(2)主要方法</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">Retryable.<span class="function">Result <span class="title">ensureGone</span><span class="params">(<span class="keyword">final</span> KeyedWeakReference reference, <span class="keyword">final</span> <span class="keyword">long</span> watchStartNanoTime)</span> </span>&#123;</span><br><span class="line">   ...</span><br><span class="line">   removeWeaklyReachableReferences();</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> (debuggerControl.isDebuggerAttached()) &#123;</span><br><span class="line">     <span class="comment">// The debugger can create false leaks.</span></span><br><span class="line">     <span class="keyword">return</span> RETRY;</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">if</span> (gone(reference)) &#123;</span><br><span class="line">     <span class="keyword">return</span> DONE;</span><br><span class="line">   &#125;</span><br><span class="line">   gcTrigger.runGc();</span><br><span class="line">   removeWeaklyReachableReferences();</span><br><span class="line">   <span class="keyword">if</span> (!gone(reference)) &#123;</span><br><span class="line">     <span class="keyword">long</span> startDumpHeap = System.nanoTime();</span><br><span class="line">     <span class="keyword">long</span> gcDurationMs = NANOSECONDS.toMillis(startDumpHeap - gcStartNanoTime);</span><br><span class="line"></span><br><span class="line">     File heapDumpFile = heapDumper.dumpHeap();</span><br><span class="line">     <span class="keyword">if</span> (heapDumpFile == RETRY_LATER) &#123;</span><br><span class="line">       <span class="comment">// Could not dump the heap.</span></span><br><span class="line">       <span class="keyword">return</span> RETRY;</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">long</span> heapDumpDurationMs = NANOSECONDS.toMillis(System.nanoTime() - startDumpHeap);</span><br><span class="line">     heapdumpListener.analyze(</span><br><span class="line">         <span class="keyword">new</span> HeapDump(heapDumpFile, reference.key, reference.name, excludedRefs, watchDurationMs,</span><br><span class="line">             gcDurationMs, heapDumpDurationMs));</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> DONE;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个涉及到Java中虚引用的概念，可google详细了解。<br>首先直接判断Activity是否释放，如果释放直接结束，没有的话就调用系统GC，再判断Activity是否释放，如果释放直接结束，没有的话生成DumpFile，然后交给HeapdumpListener处理。</p>
+<h4 id="2-5-HeapAnalyzerService-java"><a href="#2-5-HeapAnalyzerService-java" class="headerlink" title="2.5 HeapAnalyzerService.java"></a>2.5 HeapAnalyzerService.java</h4><p>解析DumpFile文件的后台服务</p>
+<h4 id="2-6-HeapAnalyzer-java"><a href="#2-6-HeapAnalyzer-java" class="headerlink" title="2.6 HeapAnalyzer.java"></a>2.6 HeapAnalyzer.java</h4><p>解析DumpFile文件工具类<br><strong>(1)主要方法</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> AnalysisResult <span class="title">checkForLeak</span><span class="params">(File heapDumpFile, String referenceKey)</span>；</span></span><br></pre></td></tr></table></figure></p>
+<p>解析过程较为复杂，有兴趣的可以了解下。主要是解析Hprof文件，GCRoots.</p>
+<h4 id="2-7-AnalysisResult-java"><a href="#2-7-AnalysisResult-java" class="headerlink" title="2.7 AnalysisResult.java"></a>2.7 AnalysisResult.java</h4><p>保存分析结果的存储对象。<br><strong>(1)主要成员</strong><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> leakFound;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> excludedLeak;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> String className;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> LeakTrace leakTrace;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> Throwable failure;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">long</span> retainedHeapSize;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">long</span> analysisDurationMs;</span><br></pre></td></tr></table></figure></p>
+<h4 id="2-8-DisplayLeakService-java"><a href="#2-8-DisplayLeakService-java" class="headerlink" title="2.8 DisplayLeakService.java"></a>2.8 DisplayLeakService.java</h4><p>主要负责通知栏提醒和保存分析结果。</p>
+<h4 id="2-9-其他"><a href="#2-9-其他" class="headerlink" title="2.9 其他"></a>2.9 其他</h4><p>其他模块主要是对结果进行展示的逻辑，这里就不一一分析。  </p>
+<h2 id="3-杂谈"><a href="#3-杂谈" class="headerlink" title="3 杂谈"></a>3 杂谈</h2><p>1.这里是通过手动触发GC，然后判断回收，手动触发GC会打乱系统自动回收，影响APP性能，所以注意不要发布到正式包。<br>2.那需要思考的正式环境想统计内存泄漏问题怎么办？自己有个思路但是有缺陷<br>（1）开启一个线程阻塞ReferenceQueue.remove(), 然后定时（5分钟）去读取retainedKeys中的未被回收的Activity。<br>（2）但是Android系统回收无规律和没有事件通知，不知道系统到底是否已经触发回收。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij</li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.diyfuture.cn/2018/04/25/LeakCanary源码解析.html" title="LeakCanary源码解析">http://www.diyfuture.cn/2018/04/25/LeakCanary源码解析.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="" rel="external nofollow" target="_blank">转载必须联系作者</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/09/13/VA加载插件资源.html" rel="next" title="VA加载插件资源">
+                <i class="fa fa-chevron-left"></i> VA加载插件资源
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caij</p>
+              <p class="site-description motion-element" itemprop="description">厚积薄发</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">43</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">tags</span>
+                  
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/caij" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-设计"><span class="nav-number">1.</span> <span class="nav-text">1 设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-类图"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 类图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-时序图"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 时序图</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-核心类功能介绍"><span class="nav-number">2.</span> <span class="nav-text">2.核心类功能介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-LeakCanary-java"><span class="nav-number">2.0.1.</span> <span class="nav-text">2.1 LeakCanary.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-RefWatcherBuilder-java"><span class="nav-number">2.0.2.</span> <span class="nav-text">2.2 RefWatcherBuilder.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-ActivityRefWatcher-java"><span class="nav-number">2.0.3.</span> <span class="nav-text">2.3 ActivityRefWatcher.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-RefWatcher-java"><span class="nav-number">2.0.4.</span> <span class="nav-text">2.4 RefWatcher.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-5-HeapAnalyzerService-java"><span class="nav-number">2.0.5.</span> <span class="nav-text">2.5 HeapAnalyzerService.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-6-HeapAnalyzer-java"><span class="nav-number">2.0.6.</span> <span class="nav-text">2.6 HeapAnalyzer.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-7-AnalysisResult-java"><span class="nav-number">2.0.7.</span> <span class="nav-text">2.7 AnalysisResult.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-8-DisplayLeakService-java"><span class="nav-number">2.0.8.</span> <span class="nav-text">2.8 DisplayLeakService.java</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-9-其他"><span class="nav-number">2.0.9.</span> <span class="nav-text">2.9 其他</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-杂谈"><span class="nav-number">3.</span> <span class="nav-text">3 杂谈</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: true,
+        notify: true,
+        appId: 'X19irIYkwb0IQJHtEK8ce5vp-gzGzoHsz',
+        appKey: '857eSi9xXR6h1jtyYzDmDHHG',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        meta:guest,
+        pageSize:'10' || 10,
+        visitor: false
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

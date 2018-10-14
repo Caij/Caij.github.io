@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="&amp;emsp;&amp;emsp;Android动画分为补间动画和帧动画两种。补间动画提供旋转、移动、缩放、透明度四种效果；帧动画是通过放置每一帧的图片，按顺序改变图片形成动画效果。然而自Android 3.0版本开始，系统给我们提供了一种全新的动画模式，属性动画(property animation)，它的功能非常强大，弥补了之前补间动画的一些缺陷，几乎是可以完全替代掉补间动画了。虽然可以代替掉，但是作为">
+<meta name="keywords" content="android,动画">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android动画基础">
+<meta property="og:url" content="http://www.diyfuture.cn/2015/08/09/Android动画基础.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="&amp;emsp;&amp;emsp;Android动画分为补间动画和帧动画两种。补间动画提供旋转、移动、缩放、透明度四种效果；帧动画是通过放置每一帧的图片，按顺序改变图片形成动画效果。然而自Android 3.0版本开始，系统给我们提供了一种全新的动画模式，属性动画(property animation)，它的功能非常强大，弥补了之前补间动画的一些缺陷，几乎是可以完全替代掉补间动画了。虽然可以代替掉，但是作为">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-08-03T03:36:04.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android动画基础">
+<meta name="twitter:description" content="&amp;emsp;&amp;emsp;Android动画分为补间动画和帧动画两种。补间动画提供旋转、移动、缩放、透明度四种效果；帧动画是通过放置每一帧的图片，按顺序改变图片形成动画效果。然而自Android 3.0版本开始，系统给我们提供了一种全新的动画模式，属性动画(property animation)，它的功能非常强大，弥补了之前补间动画的一些缺陷，几乎是可以完全替代掉补间动画了。虽然可以代替掉，但是作为">
+
+
+
+
+
+
+  <link rel="canonical" href="http://www.diyfuture.cn/2015/08/09/Android动画基础.html"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Android动画基础 | Caij</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">厚积薄发</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br />About</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="Searching..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.diyfuture.cn/2015/08/09/Android动画基础.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android动画基础
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-08-09 00:00:00" itemprop="dateCreated datePublished" datetime="2015-08-09T00:00:00+08:00">2015-08-09</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/08/09/Android动画基础.html#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">Comments: </span> <span class="post-comments-count valine-comment-count" data-xid="/2015/08/09/Android动画基础.html" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>&emsp;&emsp;Android动画分为补间动画和帧动画两种。补间动画提供旋转、移动、缩放、透明度四种效果；帧动画是通过放置每一帧的图片，按顺序改变图片形成动画效果。<br>然而自Android 3.0版本开始，系统给我们提供了一种全新的动画模式，属性动画(property animation)，它的功能非常强大，弥补了之前补间动画的一些缺陷，几乎是可以完全替代掉补间动画了。<br>虽然可以代替掉，但是作为平时学习的话还是必须了解。</p>
+<a id="more"></a>
+<h2 id="1、补间动画"><a href="#1、补间动画" class="headerlink" title="1、补间动画"></a>1、补间动画</h2><p>补间动画是可以对View进行一系列的动画操作。</p>
+<h3 id="1-1移动动画"><a href="#1-1移动动画" class="headerlink" title="1.1移动动画"></a>1.1移动动画</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">translateAnimation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 *1.坐标的的类型（ Animation.ABSOLUTE, Animation.RELATIVE_TO_SELF, Animation.RELATIVE_TO_PARENT.）</span></span><br><span class="line"><span class="comment">	 *2.x坐标的相对起始位置。这里是0.1就是相对于当前view x坐标 + view长度10%位置。</span></span><br><span class="line"><span class="comment">	 *3.坐标类型</span></span><br><span class="line"><span class="comment">	 *4.y坐标的相对起始位置。这里是0.1就是相对于当前view y 坐标 + view高度10%位置。</span></span><br><span class="line"><span class="comment">	 * */</span></span><br><span class="line">	animation = <span class="keyword">new</span> TranslateAnimation(Animation.RELATIVE_TO_SELF, <span class="number">0.1f</span>, Animation.RELATIVE_TO_SELF, <span class="number">1f</span>, Animation.RELATIVE_TO_SELF,</span><br><span class="line">			<span class="number">0.1f</span>, Animation.RELATIVE_TO_SELF, <span class="number">1f</span>);</span><br><span class="line">	<span class="comment">//动画时间</span></span><br><span class="line">	animation.setDuration(<span class="number">1000</span> * <span class="number">2</span>);</span><br><span class="line">	<span class="comment">//动画运行完后保持动画完成的效果</span></span><br><span class="line">	animation.setFillAfter(<span class="keyword">true</span>);</span><br><span class="line">	animation.setAnimationListener(<span class="keyword">new</span> Animation.AnimationListener() &#123;</span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationStart</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationEnd</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationRepeat</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="1-2缩放动画"><a href="#1-2缩放动画" class="headerlink" title="1.2缩放动画"></a>1.2缩放动画</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">scaleAnimation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 *1.fromX 起始view长度相对自己本身大小的比值 。（起始view相对与自己的50%）</span></span><br><span class="line"><span class="comment">	 *2.toX 结束view长度相对自己本身大小的比值 。</span></span><br><span class="line"><span class="comment">	 *3.pivotXType view的相对目标。</span></span><br><span class="line"><span class="comment">	 *4.pivotXValue 缩放的相对起始位置。（如果是0.5 从中间向四周放大）</span></span><br><span class="line"><span class="comment">	 * */</span></span><br><span class="line">	animation = <span class="keyword">new</span> ScaleAnimation(<span class="number">0.5f</span>, <span class="number">1f</span>, <span class="number">0.5f</span>, <span class="number">1f</span>, Animation.RELATIVE_TO_SELF, <span class="number">0</span>, Animation.RELATIVE_TO_SELF, <span class="number">0</span>);</span><br><span class="line">	<span class="comment">//动画时间</span></span><br><span class="line">	animation.setDuration(<span class="number">1000</span> * <span class="number">2</span>);</span><br><span class="line">	<span class="comment">//动画运行完后保持动画完成的效果</span></span><br><span class="line">	animation.setFillAfter(<span class="keyword">true</span>);</span><br><span class="line">	animation.setAnimationListener(<span class="keyword">new</span> Animation.AnimationListener() &#123;</span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationStart</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationEnd</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationRepeat</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="1-3旋转动画"><a href="#1-3旋转动画" class="headerlink" title="1.3旋转动画"></a>1.3旋转动画</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span>  <span class="title">rotateAnimation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	animation = <span class="keyword">new</span> RotateAnimation(<span class="number">0f</span>, <span class="number">180f</span>,  Animation.RELATIVE_TO_SELF, <span class="number">0.5f</span>,  Animation.RELATIVE_TO_SELF, <span class="number">0.5f</span>);</span><br><span class="line">	<span class="comment">//动画时间</span></span><br><span class="line">	animation.setDuration(<span class="number">1000</span> * <span class="number">2</span>);</span><br><span class="line">	<span class="comment">//动画运行完后保持动画完成的效果</span></span><br><span class="line">	animation.setFillAfter(<span class="keyword">true</span>);</span><br><span class="line">	animation.setAnimationListener(<span class="keyword">new</span> Animation.AnimationListener() &#123;</span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationStart</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationEnd</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationRepeat</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="1-4透明度动画"><a href="#1-4透明度动画" class="headerlink" title="1.4透明度动画"></a>1.4透明度动画</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">alphaAnimation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    animation = <span class="keyword">new</span> AlphaAnimation(<span class="number">0.5f</span>, <span class="number">1f</span>);</span><br><span class="line">    <span class="comment">//动画时间</span></span><br><span class="line">    animation.setDuration(<span class="number">1000</span> * <span class="number">2</span>);</span><br><span class="line">    <span class="comment">//动画运行完后保持动画完成的效果</span></span><br><span class="line">    animation.setFillAfter(<span class="keyword">true</span>);</span><br><span class="line">    animation.setAnimationListener(<span class="keyword">new</span> Animation.AnimationListener() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationStart</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationEnd</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationRepeat</span><span class="params">(Animation animation)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="1-5动画集合"><a href="#1-5动画集合" class="headerlink" title="1.5动画集合"></a>1.5动画集合</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">animationSet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	AnimationSet animationSet = <span class="keyword">new</span> AnimationSet(<span class="keyword">true</span>);</span><br><span class="line">	<span class="comment">//动画时间 在AnimationSet 中需要设置给AnimationSet，设置给子animation是无效的。</span></span><br><span class="line">	animationSet.setDuration(<span class="number">1000</span> * <span class="number">2</span>);</span><br><span class="line">	<span class="comment">//动画运行完后保持动画完成的效果，在AnimationSet 中需要设置给AnimationSet，设置给子animation是无效的。</span></span><br><span class="line">	animationSet.setFillAfter(<span class="keyword">true</span>);</span><br><span class="line">	Animation scaleAnimation = <span class="keyword">new</span> ScaleAnimation(<span class="number">0.5f</span>, <span class="number">1f</span>, <span class="number">0.5f</span>, <span class="number">1f</span>, Animation.RELATIVE_TO_SELF, <span class="number">0</span>, Animation.RELATIVE_TO_SELF, <span class="number">0</span>);</span><br><span class="line">	Animation alphaAnimation = <span class="keyword">new</span> AlphaAnimation(<span class="number">0.5f</span>, <span class="number">1f</span>);</span><br><span class="line">	animationSet.addAnimation(scaleAnimation);</span><br><span class="line">	animationSet.addAnimation(alphaAnimation);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="1-6interpolator"><a href="#1-6interpolator" class="headerlink" title="1.6interpolator"></a>1.6interpolator</h3><p>  AccelerateDecelerateInterpolator 在动画开始与结束的地方速率改变比较慢，在中间的时候加速  </p>
+<p>  AccelerateInterpolator  在动画开始的地方速率改变比较慢，然后开始加速  </p>
+<p>  AnticipateInterpolator 开始的时候向后然后向前甩  </p>
+<p>  AnticipateOvershootInterpolator 开始的时候向后然后向前甩一定值后返回最后的值  </p>
+<p>  BounceInterpolator   动画结束的时候弹起  </p>
+<p>  CycleInterpolator 动画循环播放特定的次数，速率改变沿着正弦曲线  </p>
+<p>  DecelerateInterpolator 在动画开始的地方快然后慢  </p>
+<p>  LinearInterpolator   以常量速率改变  </p>
+<p>  OvershootInterpolator    向前甩一定值后再回到原来位置  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">interpolator</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	Interpolator interpolator = <span class="keyword">new</span> LinearInterpolator(); <span class="comment">//动画插值器， 用于设置动画改变的速率。</span></span><br><span class="line">	animation = <span class="keyword">new</span> TranslateAnimation(Animation.RELATIVE_TO_SELF, <span class="number">0.1f</span>, Animation.RELATIVE_TO_SELF, <span class="number">1f</span>, Animation.RELATIVE_TO_SELF,</span><br><span class="line">			<span class="number">0.1f</span>, Animation.RELATIVE_TO_SELF, <span class="number">1f</span>);</span><br><span class="line">	<span class="comment">//动画时间</span></span><br><span class="line">	animation.setDuration(<span class="number">1000</span> * <span class="number">2</span>);</span><br><span class="line">	<span class="comment">//动画运行完后保持动画完成的效果</span></span><br><span class="line">	animation.setFillAfter(<span class="keyword">true</span>);</span><br><span class="line">	animation.setInterpolator(interpolator);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="1-7xml中编辑动画"><a href="#1-7xml中编辑动画" class="headerlink" title="1.7xml中编辑动画"></a>1.7xml中编辑动画</h3><p>在res下新建一个anim文件夹，添加动画文件。 参数意义和代码中的一样。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;</span><br><span class="line">&lt;set xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;translate</span><br><span class="line">        android:fromXDelta=<span class="string">"0%p"</span></span><br><span class="line">        android:toXDelta=<span class="string">"0%p"</span></span><br><span class="line">        android:fromYDelta=<span class="string">"40%p"</span></span><br><span class="line">        android:toYDelta=<span class="string">"0%p"</span></span><br><span class="line">        android:duration=<span class="string">"80"</span>/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;scale android:duration=<span class="string">"80"</span></span><br><span class="line">        android:fromXScale=<span class="string">"0.8"</span></span><br><span class="line">        android:toXScale=<span class="string">"1.2"</span></span><br><span class="line">        android:fromYScale=<span class="string">"0.8"</span></span><br><span class="line">        android:toYScale=<span class="string">"1.2"</span></span><br><span class="line">        android:pivotX=<span class="string">"50%"</span></span><br><span class="line">        android:pivotY=<span class="string">"50%"</span></span><br><span class="line">        /&gt;</span><br><span class="line"></span><br><span class="line">&lt;/set&gt;</span><br></pre></td></tr></table></figure></p>
+<p>在代码中获取动画<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Animation popShowAni = AnimationUtils.loadAnimation(<span class="keyword">this</span>, R.anim.dynamic_pop_enter);</span><br></pre></td></tr></table></figure></p>
+<h2 id="2、帧动画"><a href="#2、帧动画" class="headerlink" title="2、帧动画"></a>2、帧动画</h2><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span>?&gt;&lt;!--</span><br><span class="line">	根标签为animation-list，其中oneshot代表着是否只展示一遍，设置为<span class="keyword">false</span>会不停的循环播放动画</span><br><span class="line">	根标签下，通过item标签对动画中的每一个图片进行声明</span><br><span class="line">	android:duration 表示展示所用的该图片的时间长度</span><br><span class="line"> --&gt;</span><br><span class="line">&lt;animation-list xmlns:android=<span class="string">"http://schemas.android.com/apk/res/android"</span></span><br><span class="line">    android:oneshot=<span class="string">"false"</span>&gt;</span><br><span class="line">    &lt;item</span><br><span class="line">        android:drawable=<span class="string">"@drawable/pulling_load1"</span></span><br><span class="line">        android:duration="40"&gt;&lt;/item&gt;</span><br><span class="line">    &lt;item</span><br><span class="line">        android:drawable=<span class="string">"@drawable/pulling_load2"</span></span><br><span class="line">        android:duration="40"&gt;&lt;/item&gt;</span><br><span class="line">    &lt;item</span><br><span class="line">        android:drawable=<span class="string">"@drawable/pulling_load3"</span></span><br><span class="line">        android:duration="40"&gt;&lt;/item&gt;</span><br><span class="line">    &lt;item</span><br><span class="line">        android:drawable=<span class="string">"@drawable/pulling_load4"</span></span><br><span class="line">        android:duration="40"&gt;&lt;/item&gt;</span><br><span class="line">    &lt;item</span><br><span class="line">        android:drawable=<span class="string">"@drawable/pulling_load5"</span></span><br><span class="line">        android:duration="40"&gt;&lt;/item&gt;</span><br><span class="line">    &lt;item</span><br><span class="line">        android:drawable=<span class="string">"@drawable/pulling_load6"</span></span><br><span class="line">        android:duration="40"&gt;&lt;/item&gt;</span><br><span class="line">&lt;/animation-list&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;ImageView</span><br><span class="line">	android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">	android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">	android:src=<span class="string">"@drawable/pulling_load"</span></span><br><span class="line">	android:id=<span class="string">"@+id/animation_view"</span>/&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">frameAnimation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	ImageView imageView = (ImageView) findViewById(R.id.animation_view);</span><br><span class="line">	AnimationDrawable drawable = (AnimationDrawable) imageView.getDrawable();</span><br><span class="line">	drawable.start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="3-属性动画"><a href="#3-属性动画" class="headerlink" title="3 属性动画"></a>3 属性动画</h2><p><a href="http://blog.csdn.net/guolin_blog/article/details/43536355" target="_blank">Android属性动画完全解析(上)，初识属性动画的基本用法</a><br><br><a href="http://blog.csdn.net/guolin_blog/article/details/43816093" target="_blank">Android属性动画完全解析(中)，ValueAnimator和ObjectAnimator的高级用法</a><br><br><a href="http://blog.csdn.net/guolin_blog/article/details/44171115" target="_blank">Android属性动画完全解析(下)，Interpolator和ViewPropertyAnimator的用法</a><br></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij</li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.diyfuture.cn/2015/08/09/Android动画基础.html" title="Android动画基础">http://www.diyfuture.cn/2015/08/09/Android动画基础.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="" rel="external nofollow" target="_blank">转载必须联系作者</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/android/" rel="tag"># android</a>
+          
+            <a href="/tags/动画/" rel="tag"># 动画</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/08/05/Android代码优化.html" rel="next" title="Android性能优化之代码优化">
+                <i class="fa fa-chevron-left"></i> Android性能优化之代码优化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/08/10/进程通信.html" rel="prev" title="Android进程通信">
+                Android进程通信 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caij</p>
+              <p class="site-description motion-element" itemprop="description">厚积薄发</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">43</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">tags</span>
+                  
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/caij" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1、补间动画"><span class="nav-number">1.</span> <span class="nav-text">1、补间动画</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1移动动画"><span class="nav-number">1.1.</span> <span class="nav-text">1.1移动动画</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2缩放动画"><span class="nav-number">1.2.</span> <span class="nav-text">1.2缩放动画</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3旋转动画"><span class="nav-number">1.3.</span> <span class="nav-text">1.3旋转动画</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4透明度动画"><span class="nav-number">1.4.</span> <span class="nav-text">1.4透明度动画</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-5动画集合"><span class="nav-number">1.5.</span> <span class="nav-text">1.5动画集合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-6interpolator"><span class="nav-number">1.6.</span> <span class="nav-text">1.6interpolator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-7xml中编辑动画"><span class="nav-number">1.7.</span> <span class="nav-text">1.7xml中编辑动画</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2、帧动画"><span class="nav-number">2.</span> <span class="nav-text">2、帧动画</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-属性动画"><span class="nav-number">3.</span> <span class="nav-text">3 属性动画</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: true,
+        notify: true,
+        appId: 'X19irIYkwb0IQJHtEK8ce5vp-gzGzoHsz',
+        appKey: '857eSi9xXR6h1jtyYzDmDHHG',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        meta:guest,
+        pageSize:'10' || 10,
+        visitor: false
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

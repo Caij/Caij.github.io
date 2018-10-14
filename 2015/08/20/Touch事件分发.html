@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="之前分析了界面显示流程，显示以后，界面将接收用户操作事件，本文将分析Touch事件分发机制。">
+<meta name="keywords" content="android,touch">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Touch事件分发">
+<meta property="og:url" content="http://www.diyfuture.cn/2015/08/20/Touch事件分发.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="之前分析了界面显示流程，显示以后，界面将接收用户操作事件，本文将分析Touch事件分发机制。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-08-03T03:36:04.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Touch事件分发">
+<meta name="twitter:description" content="之前分析了界面显示流程，显示以后，界面将接收用户操作事件，本文将分析Touch事件分发机制。">
+
+
+
+
+
+
+  <link rel="canonical" href="http://www.diyfuture.cn/2015/08/20/Touch事件分发.html"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Touch事件分发 | Caij</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">厚积薄发</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br />About</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="Searching..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.diyfuture.cn/2015/08/20/Touch事件分发.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Touch事件分发
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2015-08-20 00:00:00" itemprop="dateCreated datePublished" datetime="2015-08-20T00:00:00+08:00">2015-08-20</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2015/08/20/Touch事件分发.html#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">Comments: </span> <span class="post-comments-count valine-comment-count" data-xid="/2015/08/20/Touch事件分发.html" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>之前分析了界面显示流程，显示以后，界面将接收用户操作事件，本文将分析Touch事件分发机制。  </p>
+<a id="more"></a>
+<h3 id="1-由Activity显示到界面流程分析中我们知道最后创建ViewRoot，ViewRoot的setView中注册了事件消息处理。"><a href="#1-由Activity显示到界面流程分析中我们知道最后创建ViewRoot，ViewRoot的setView中注册了事件消息处理。" class="headerlink" title="1. 由Activity显示到界面流程分析中我们知道最后创建ViewRoot，ViewRoot的setView中注册了事件消息处理。"></a>1. 由Activity显示到界面流程分析中我们知道最后创建ViewRoot，ViewRoot的setView中注册了事件消息处理。</h3><p>具体的注册流程和事件回调请看老罗<a href="http://blog.csdn.net/luoshengyang/article/details/6882903" target="_blank">消息处理机制分析</a><br><br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setView</span><span class="params">(View view, WindowManager.LayoutParams attrs,</span></span></span><br><span class="line"><span class="function"><span class="params">		View panelParentView)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">		<span class="keyword">if</span> (mView == <span class="keyword">null</span>) &#123;</span><br><span class="line">			mView = view;</span><br><span class="line">			mWindowAttributes.copyFrom(attrs);</span><br><span class="line">			attrs = mWindowAttributes;</span><br><span class="line"></span><br><span class="line">			mSoftInputMode = attrs.softInputMode;</span><br><span class="line">			mWindowAttributesChanged = <span class="keyword">true</span>;</span><br><span class="line">			mAttachInfo.mRootView = view;</span><br><span class="line">			mAttachInfo.mScalingRequired = mTranslator != <span class="keyword">null</span>;</span><br><span class="line">			mAttachInfo.mApplicationScale =</span><br><span class="line">					mTranslator == <span class="keyword">null</span> ? <span class="number">1.0f</span> : mTranslator.applicationScale;</span><br><span class="line">			<span class="keyword">if</span> (panelParentView != <span class="keyword">null</span>) &#123;</span><br><span class="line">				mAttachInfo.mPanelParentWindowToken</span><br><span class="line">						= panelParentView.getApplicationWindowToken();</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			requestLayout();</span><br><span class="line">			mInputChannel = <span class="keyword">new</span> InputChannel();</span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				res = sWindowSession.add(mWindow, mWindowAttributes,</span><br><span class="line">						getHostVisibility(), mAttachInfo.mContentInsets,</span><br><span class="line">						mInputChannel);</span><br><span class="line">			&#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line"></span><br><span class="line">			&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">				<span class="keyword">if</span> (restore) &#123;</span><br><span class="line">					attrs.restore();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (mInputQueueCallback != <span class="keyword">null</span>) &#123;</span><br><span class="line"></span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				InputQueue.registerInputChannel(mInputChannel, mInputHandler,</span><br><span class="line">						Looper.myQueue());</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>InputQueue.registerInputChannel(mInputChannel, mInputHandler,Looper.myQueue())，注册接收mInputHandler。 </p>
+<h3 id="2-new-InputHandler"><a href="#2-new-InputHandler" class="headerlink" title="2. new InputHandler()"></a>2. new InputHandler()</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> InputHandler mInputHandler = <span class="keyword">new</span> InputHandler() &#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleKey</span><span class="params">(KeyEvent event, Runnable finishedCallback)</span> </span>&#123;</span><br><span class="line">		startInputEvent(finishedCallback);</span><br><span class="line">		dispatchKey(event, <span class="keyword">true</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleMotion</span><span class="params">(MotionEvent event, Runnable finishedCallback)</span> </span>&#123;</span><br><span class="line">		startInputEvent(finishedCallback);</span><br><span class="line">		dispatchMotion(event, <span class="keyword">true</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="3-ViewRoot-dispatchMotion"><a href="#3-ViewRoot-dispatchMotion" class="headerlink" title="3. ViewRoot.dispatchMotion"></a>3. ViewRoot.dispatchMotion</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">dispatchMotion</span><span class="params">(MotionEvent event, <span class="keyword">boolean</span> sendDone)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> source = event.getSource();</span><br><span class="line">	<span class="keyword">if</span> ((source &amp; InputDevice.SOURCE_CLASS_POINTER) != <span class="number">0</span>) &#123;</span><br><span class="line">		dispatchPointer(event, sendDone);</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> ((source &amp; InputDevice.SOURCE_CLASS_TRACKBALL) != <span class="number">0</span>) &#123;</span><br><span class="line">		dispatchTrackball(event, sendDone);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="comment">// TODO</span></span><br><span class="line">		Log.v(TAG, <span class="string">"Dropping unsupported motion event (unimplemented): "</span> + event);</span><br><span class="line">		<span class="keyword">if</span> (sendDone) &#123;</span><br><span class="line">			finishInputEvent();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="4-ViewRoot-dispatchPointer"><a href="#4-ViewRoot-dispatchPointer" class="headerlink" title="4. ViewRoot.dispatchPointer"></a>4. ViewRoot.dispatchPointer</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">dispatchPointer</span><span class="params">(MotionEvent event, <span class="keyword">boolean</span> sendDone)</span> </span>&#123;</span><br><span class="line">	Message msg = obtainMessage(DISPATCH_POINTER);</span><br><span class="line">	msg.obj = event;</span><br><span class="line">	msg.arg1 = sendDone ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">	sendMessageAtTime(msg, event.getEventTime());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ViewRoot本身是Handler对象。 </p>
+<h3 id="5-ViewRoot-handleMessage"><a href="#5-ViewRoot-handleMessage" class="headerlink" title="5. ViewRoot.handleMessage"></a>5. ViewRoot.handleMessage</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleMessage</span><span class="params">(Message msg)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">switch</span> (msg.what) &#123;</span><br><span class="line">	<span class="keyword">case</span> DISPATCH_POINTER: &#123;</span><br><span class="line">		MotionEvent event = (MotionEvent) msg.obj;</span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">			deliverPointerEvent(event);</span><br><span class="line">		&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">			event.recycle();</span><br><span class="line">			<span class="keyword">if</span> (msg.arg1 != <span class="number">0</span>) &#123;</span><br><span class="line">				finishInputEvent();</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> (LOCAL_LOGV || WATCH_POINTER) Log.i(TAG, <span class="string">"Done dispatching!"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">break</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="6-ViewRoot-deliverPointerEvent"><a href="#6-ViewRoot-deliverPointerEvent" class="headerlink" title="6. ViewRoot.deliverPointerEvent"></a>6. ViewRoot.deliverPointerEvent</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">deliverPointerEvent</span><span class="params">(MotionEvent event)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (mTranslator != <span class="keyword">null</span>) &#123;</span><br><span class="line">		mTranslator.translateEventInScreenToAppWindow(event);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">boolean</span> handled;</span><br><span class="line">	<span class="keyword">if</span> (mView != <span class="keyword">null</span> &amp;&amp; mAdded) &#123;</span><br><span class="line"></span><br><span class="line">		...</span><br><span class="line">		</span><br><span class="line">		handled = mView.dispatchTouchEvent(event);</span><br><span class="line">		<span class="keyword">if</span> (MEASURE_LATENCY) &#123;</span><br><span class="line">			lt.sample(<span class="string">"B Dispatched TouchEvents "</span>, System.nanoTime() - event.getEventTimeNano());</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (!handled &amp;&amp; isDown) &#123;</span><br><span class="line">			<span class="keyword">int</span> edgeSlop = mViewConfiguration.getScaledEdgeSlop();</span><br><span class="line"></span><br><span class="line">			....</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (edgeFlags != <span class="number">0</span> &amp;&amp; mView <span class="keyword">instanceof</span> ViewGroup) &#123;</span><br><span class="line">				View nearest = FocusFinder.getInstance().findNearestTouchable(</span><br><span class="line">						((ViewGroup) mView), x, y, direction, deltas);</span><br><span class="line">				<span class="keyword">if</span> (nearest != <span class="keyword">null</span>) &#123;</span><br><span class="line">					event.offsetLocation(deltas[<span class="number">0</span>], deltas[<span class="number">1</span>]);</span><br><span class="line">					event.setEdgeFlags(<span class="number">0</span>);</span><br><span class="line">					mView.dispatchTouchEvent(event);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">这里mView在setView的方法中初始化，其实就是Window中的DecorView。</span><br></pre></td></tr></table></figure>
+<h3 id="7-DecorView-dispatchTouchEvent"><a href="#7-DecorView-dispatchTouchEvent" class="headerlink" title="7. DecorView.dispatchTouchEvent"></a>7. DecorView.dispatchTouchEvent</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">dispatchKeyEvent</span><span class="params">(KeyEvent event)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">int</span> keyCode = event.getKeyCode();</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">boolean</span> isDown = event.getAction() == KeyEvent.ACTION_DOWN;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">final</span> Callback cb = getCallback();</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">boolean</span> handled = cb != <span class="keyword">null</span> &amp;&amp; mFeatureId &lt; <span class="number">0</span> ? cb.dispatchKeyEvent(event)</span><br><span class="line">			: <span class="keyword">super</span>.dispatchKeyEvent(event);</span><br><span class="line">	<span class="keyword">if</span> (handled) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> isDown ? PhoneWindow.<span class="keyword">this</span>.onKeyDown(mFeatureId, event.getKeyCode(), event)</span><br><span class="line">			: PhoneWindow.<span class="keyword">this</span>.onKeyUp(mFeatureId, event.getKeyCode(), event);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的callback就是在activity的attach方法中设置的，其实就是Activity。  </p>
+<h3 id="8-Activity-dispatchTouchEvent"><a href="#8-Activity-dispatchTouchEvent" class="headerlink" title="8. Activity.dispatchTouchEvent"></a>8. Activity.dispatchTouchEvent</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">dispatchTouchEvent</span><span class="params">(MotionEvent ev)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (ev.getAction() == MotionEvent.ACTION_DOWN) &#123;</span><br><span class="line">		onUserInteraction();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (getWindow().superDispatchTouchEvent(ev)) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> onTouchEvent(ev);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="9-PhoneWindow-superDispatchTouchEvent"><a href="#9-PhoneWindow-superDispatchTouchEvent" class="headerlink" title="9. PhoneWindow.superDispatchTouchEvent"></a>9. PhoneWindow.superDispatchTouchEvent</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">superDispatchTouchEvent</span><span class="params">(MotionEvent event)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> mDecor.superDispatchTouchEvent(event);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="10-DecorView-superDispatchTouchEvent"><a href="#10-DecorView-superDispatchTouchEvent" class="headerlink" title="10. DecorView.superDispatchTouchEvent"></a>10. DecorView.superDispatchTouchEvent</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">superDispatchTouchEvent</span><span class="params">(MotionEvent event)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">super</span>.dispatchTouchEvent(event);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="11-ViewGroup-dispatchTouchEvent"><a href="#11-ViewGroup-dispatchTouchEvent" class="headerlink" title="11. ViewGroup.dispatchTouchEvent"></a>11. ViewGroup.dispatchTouchEvent</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">dispatchTouchEvent</span><span class="params">(MotionEvent ev)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (!onFilterTouchEventForSecurity(ev)) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">int</span> action = ev.getAction();</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">float</span> xf = ev.getX();</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">float</span> yf = ev.getY();</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">float</span> scrolledXFloat = xf + mScrollX;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">float</span> scrolledYFloat = yf + mScrollY;</span><br><span class="line">	<span class="keyword">final</span> Rect frame = mTempRect;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">boolean</span> disallowIntercept = (mGroupFlags &amp; FLAG_DISALLOW_INTERCEPT) != <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (action == MotionEvent.ACTION_DOWN) &#123;</span><br><span class="line">		<span class="keyword">if</span> (mMotionTarget != <span class="keyword">null</span>) &#123;</span><br><span class="line">			<span class="comment">// this is weird, we got a pen down, but we thought it was</span></span><br><span class="line">			<span class="comment">// already down!</span></span><br><span class="line">			<span class="comment">// <span class="doctag">XXX:</span> We should probably send an ACTION_UP to the current</span></span><br><span class="line">			<span class="comment">// target.</span></span><br><span class="line">			mMotionTarget = <span class="keyword">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// If we're disallowing intercept or if we're allowing and we didn't</span></span><br><span class="line">		<span class="comment">// intercept</span></span><br><span class="line">		<span class="keyword">if</span> (disallowIntercept || !onInterceptTouchEvent(ev)) &#123;</span><br><span class="line">			<span class="comment">// reset this event's action (just to protect ourselves)</span></span><br><span class="line">			ev.setAction(MotionEvent.ACTION_DOWN);</span><br><span class="line">			<span class="comment">// We know we want to dispatch the event down, find a child</span></span><br><span class="line">			<span class="comment">// who can handle it, start with the front-most child.</span></span><br><span class="line">			<span class="keyword">final</span> <span class="keyword">int</span> scrolledXInt = (<span class="keyword">int</span>) scrolledXFloat;</span><br><span class="line">			<span class="keyword">final</span> <span class="keyword">int</span> scrolledYInt = (<span class="keyword">int</span>) scrolledYFloat;</span><br><span class="line">			<span class="keyword">final</span> View[] children = mChildren;</span><br><span class="line">			<span class="keyword">final</span> <span class="keyword">int</span> count = mChildrenCount;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = count - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">				<span class="keyword">final</span> View child = children[i];</span><br><span class="line">				<span class="keyword">if</span> ((child.mViewFlags &amp; VISIBILITY_MASK) == VISIBLE</span><br><span class="line">						|| child.getAnimation() != <span class="keyword">null</span>) &#123;</span><br><span class="line">					child.getHitRect(frame);</span><br><span class="line">					<span class="keyword">if</span> (frame.contains(scrolledXInt, scrolledYInt)) &#123;</span><br><span class="line">						<span class="comment">// offset the event to the view's coordinate system</span></span><br><span class="line">						<span class="keyword">final</span> <span class="keyword">float</span> xc = scrolledXFloat - child.mLeft;</span><br><span class="line">						<span class="keyword">final</span> <span class="keyword">float</span> yc = scrolledYFloat - child.mTop;</span><br><span class="line">						ev.setLocation(xc, yc);</span><br><span class="line">						child.mPrivateFlags &amp;= ~CANCEL_NEXT_UP_EVENT;</span><br><span class="line">						<span class="keyword">if</span> (child.dispatchTouchEvent(ev))  &#123;</span><br><span class="line">							<span class="comment">// Event handled, we have a target now.</span></span><br><span class="line">							mMotionTarget = child;</span><br><span class="line">							<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">						&#125;</span><br><span class="line">						<span class="comment">// The event didn't get handled, try the next view.</span></span><br><span class="line">						<span class="comment">// Don't reset the event's location, it's not</span></span><br><span class="line">						<span class="comment">// necessary here.</span></span><br><span class="line">					&#125;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">boolean</span> isUpOrCancel = (action == MotionEvent.ACTION_UP) ||</span><br><span class="line">			(action == MotionEvent.ACTION_CANCEL);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (isUpOrCancel) &#123;</span><br><span class="line">		<span class="comment">// Note, we've already copied the previous state to our local</span></span><br><span class="line">		<span class="comment">// variable, so this takes effect on the next event</span></span><br><span class="line">		mGroupFlags &amp;= ~FLAG_DISALLOW_INTERCEPT;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// The event wasn't an ACTION_DOWN, dispatch it to our target if</span></span><br><span class="line">	<span class="comment">// we have one.</span></span><br><span class="line">	<span class="keyword">final</span> View target = mMotionTarget;</span><br><span class="line">	<span class="keyword">if</span> (target == <span class="keyword">null</span>) &#123;</span><br><span class="line">		<span class="comment">// We don't have a target, this means we're handling the</span></span><br><span class="line">		<span class="comment">// event as a regular view.</span></span><br><span class="line">		ev.setLocation(xf, yf);</span><br><span class="line">		<span class="keyword">if</span> ((mPrivateFlags &amp; CANCEL_NEXT_UP_EVENT) != <span class="number">0</span>) &#123;</span><br><span class="line">			ev.setAction(MotionEvent.ACTION_CANCEL);</span><br><span class="line">			mPrivateFlags &amp;= ~CANCEL_NEXT_UP_EVENT;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">super</span>.dispatchTouchEvent(ev);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// if have a target, see if we're allowed to and want to intercept its</span></span><br><span class="line">	<span class="comment">// events</span></span><br><span class="line">	<span class="keyword">if</span> (!disallowIntercept &amp;&amp; onInterceptTouchEvent(ev)) &#123;</span><br><span class="line">		<span class="keyword">final</span> <span class="keyword">float</span> xc = scrolledXFloat - (<span class="keyword">float</span>) target.mLeft;</span><br><span class="line">		<span class="keyword">final</span> <span class="keyword">float</span> yc = scrolledYFloat - (<span class="keyword">float</span>) target.mTop;</span><br><span class="line">		mPrivateFlags &amp;= ~CANCEL_NEXT_UP_EVENT;</span><br><span class="line">		ev.setAction(MotionEvent.ACTION_CANCEL);</span><br><span class="line">		ev.setLocation(xc, yc);</span><br><span class="line">		<span class="keyword">if</span> (!target.dispatchTouchEvent(ev)) &#123;</span><br><span class="line">			<span class="comment">// target didn't handle ACTION_CANCEL. not much we can do</span></span><br><span class="line">			<span class="comment">// but they should have.</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// clear the target</span></span><br><span class="line">		mMotionTarget = <span class="keyword">null</span>;</span><br><span class="line">		<span class="comment">// Don't dispatch this event to our own view, because we already</span></span><br><span class="line">		<span class="comment">// saw it when intercepting; we just want to give the following</span></span><br><span class="line">		<span class="comment">// event to the normal onTouchEvent().</span></span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (isUpOrCancel) &#123;</span><br><span class="line">		mMotionTarget = <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// finally offset the event to the target's coordinate system and</span></span><br><span class="line">	<span class="comment">// dispatch the event.</span></span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">float</span> xc = scrolledXFloat - (<span class="keyword">float</span>) target.mLeft;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">float</span> yc = scrolledYFloat - (<span class="keyword">float</span>) target.mTop;</span><br><span class="line">	ev.setLocation(xc, yc);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> ((target.mPrivateFlags &amp; CANCEL_NEXT_UP_EVENT) != <span class="number">0</span>) &#123;</span><br><span class="line">		ev.setAction(MotionEvent.ACTION_CANCEL);</span><br><span class="line">		target.mPrivateFlags &amp;= ~CANCEL_NEXT_UP_EVENT;</span><br><span class="line">		mMotionTarget = <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> target.dispatchTouchEvent(ev);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>1）首先判断disallowIntercept，只有ViewGroup才可以中断touch事件传递。<br>2）onInterceptTouchEvent开发者自定义是否中断事件传递，默认为false。<br>3）for循环遍历子View，然后调用子View的dispatchTouchEvent，如果有子View消费事件使用mMotionTarget记录当前的子View。<br>4）这里可以看出，只有Down的时候消费了事件才可以接收接下来的事件。<br>5）如果没有子View消费事件或者ViewGroup中断事件传递则调用super.dispatchTouchEvent(ev)，则是View.dispatchTouchEvent(ev)。  </p>
+<h3 id="12-View-dispatchTouchEvent"><a href="#12-View-dispatchTouchEvent" class="headerlink" title="12. View.dispatchTouchEvent"></a>12. View.dispatchTouchEvent</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">dispatchTouchEvent</span><span class="params">(MotionEvent event)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (!onFilterTouchEventForSecurity(event)) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (mOnTouchListener != <span class="keyword">null</span> &amp;&amp; (mViewFlags &amp; ENABLED_MASK) == ENABLED &amp;&amp;</span><br><span class="line">			mOnTouchListener.onTouch(<span class="keyword">this</span>, event)) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> onTouchEvent(event);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里如果设置自定义的mOnTouchListener，然后消费事件则直接返回true，否则调用onTouchEvent  </p>
+<h3 id="13-View-onTouchEvent"><a href="#13-View-onTouchEvent" class="headerlink" title="13 View.onTouchEvent"></a>13 View.onTouchEvent</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onTouchEvent</span><span class="params">(MotionEvent event)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">int</span> viewFlags = mViewFlags;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> ((viewFlags &amp; ENABLED_MASK) == DISABLED) &#123;</span><br><span class="line">		<span class="comment">// A disabled view that is clickable still consumes the touch</span></span><br><span class="line">		<span class="comment">// events, it just doesn't respond to them.</span></span><br><span class="line">		<span class="keyword">return</span> (((viewFlags &amp; CLICKABLE) == CLICKABLE ||</span><br><span class="line">				(viewFlags &amp; LONG_CLICKABLE) == LONG_CLICKABLE));</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (mTouchDelegate != <span class="keyword">null</span>) &#123;</span><br><span class="line">		<span class="keyword">if</span> (mTouchDelegate.onTouchEvent(event)) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (((viewFlags &amp; CLICKABLE) == CLICKABLE ||</span><br><span class="line">			(viewFlags &amp; LONG_CLICKABLE) == LONG_CLICKABLE)) &#123;</span><br><span class="line">		<span class="keyword">switch</span> (event.getAction()) &#123;</span><br><span class="line">			<span class="keyword">case</span> MotionEvent.ACTION_UP:</span><br><span class="line">				<span class="keyword">boolean</span> prepressed = (mPrivateFlags &amp; PREPRESSED) != <span class="number">0</span>;</span><br><span class="line">				<span class="keyword">if</span> ((mPrivateFlags &amp; PRESSED) != <span class="number">0</span> || prepressed) &#123;</span><br><span class="line">					<span class="comment">// take focus if we don't have it already and we should in</span></span><br><span class="line">					<span class="comment">// touch mode.</span></span><br><span class="line">					<span class="keyword">boolean</span> focusTaken = <span class="keyword">false</span>;</span><br><span class="line">					<span class="keyword">if</span> (isFocusable() &amp;&amp; isFocusableInTouchMode() &amp;&amp; !isFocused()) &#123;</span><br><span class="line">						focusTaken = requestFocus();</span><br><span class="line">					&#125;</span><br><span class="line"></span><br><span class="line">					<span class="keyword">if</span> (!mHasPerformedLongPress) &#123;</span><br><span class="line">						<span class="comment">// This is a tap, so remove the longpress check</span></span><br><span class="line">						removeLongPressCallback();</span><br><span class="line"></span><br><span class="line">						<span class="comment">// Only perform take click actions if we were in the pressed state</span></span><br><span class="line">						<span class="keyword">if</span> (!focusTaken) &#123;</span><br><span class="line">							<span class="comment">// Use a Runnable and post this rather than calling</span></span><br><span class="line">							<span class="comment">// performClick directly. This lets other visual state</span></span><br><span class="line">							<span class="comment">// of the view update before click actions start.</span></span><br><span class="line">							<span class="keyword">if</span> (mPerformClick == <span class="keyword">null</span>) &#123;</span><br><span class="line">								mPerformClick = <span class="keyword">new</span> PerformClick();</span><br><span class="line">							&#125;</span><br><span class="line">							<span class="keyword">if</span> (!post(mPerformClick)) &#123;</span><br><span class="line">								performClick();</span><br><span class="line">							&#125;</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;</span><br><span class="line"></span><br><span class="line">					<span class="keyword">if</span> (mUnsetPressedState == <span class="keyword">null</span>) &#123;</span><br><span class="line">						mUnsetPressedState = <span class="keyword">new</span> UnsetPressedState();</span><br><span class="line">					&#125;</span><br><span class="line"></span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">case</span> MotionEvent.ACTION_DOWN:</span><br><span class="line">			</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">case</span> MotionEvent.ACTION_CANCEL:</span><br><span class="line"></span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">case</span> MotionEvent.ACTION_MOVE:</span><br><span class="line"></span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果View是CLICKABLE，直接消费事件（Button就是CLICKABLE）  </p>
+<p><a href="http://codekk.com/open-source-project-analysis/detail/Android/Trinea/%E5%85%AC%E5%85%B1%E6%8A%80%E6%9C%AF%E7%82%B9%E4%B9%8B%20View%20%E4%BA%8B%E4%BB%B6%E4%BC%A0%E9%80%92" target="_blank">touch消息处理流程图</a><br></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij</li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.diyfuture.cn/2015/08/20/Touch事件分发.html" title="Touch事件分发">http://www.diyfuture.cn/2015/08/20/Touch事件分发.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="" rel="external nofollow" target="_blank">转载必须联系作者</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/android/" rel="tag"># android</a>
+          
+            <a href="/tags/touch/" rel="tag"># touch</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2015/08/15/Activity显示到界面流程.html" rel="next" title="Activity显示到界面流程">
+                <i class="fa fa-chevron-left"></i> Activity显示到界面流程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2015/08/22/View绘制流程.html" rel="prev" title="View绘制流程">
+                View绘制流程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caij</p>
+              <p class="site-description motion-element" itemprop="description">厚积薄发</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">43</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">tags</span>
+                  
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/caij" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-由Activity显示到界面流程分析中我们知道最后创建ViewRoot，ViewRoot的setView中注册了事件消息处理。"><span class="nav-number">1.</span> <span class="nav-text">1. 由Activity显示到界面流程分析中我们知道最后创建ViewRoot，ViewRoot的setView中注册了事件消息处理。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-new-InputHandler"><span class="nav-number">2.</span> <span class="nav-text">2. new InputHandler()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-ViewRoot-dispatchMotion"><span class="nav-number">3.</span> <span class="nav-text">3. ViewRoot.dispatchMotion</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-ViewRoot-dispatchPointer"><span class="nav-number">4.</span> <span class="nav-text">4. ViewRoot.dispatchPointer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-ViewRoot-handleMessage"><span class="nav-number">5.</span> <span class="nav-text">5. ViewRoot.handleMessage</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-ViewRoot-deliverPointerEvent"><span class="nav-number">6.</span> <span class="nav-text">6. ViewRoot.deliverPointerEvent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-DecorView-dispatchTouchEvent"><span class="nav-number">7.</span> <span class="nav-text">7. DecorView.dispatchTouchEvent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-Activity-dispatchTouchEvent"><span class="nav-number">8.</span> <span class="nav-text">8. Activity.dispatchTouchEvent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-PhoneWindow-superDispatchTouchEvent"><span class="nav-number">9.</span> <span class="nav-text">9. PhoneWindow.superDispatchTouchEvent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-DecorView-superDispatchTouchEvent"><span class="nav-number">10.</span> <span class="nav-text">10. DecorView.superDispatchTouchEvent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#11-ViewGroup-dispatchTouchEvent"><span class="nav-number">11.</span> <span class="nav-text">11. ViewGroup.dispatchTouchEvent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12-View-dispatchTouchEvent"><span class="nav-number">12.</span> <span class="nav-text">12. View.dispatchTouchEvent</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#13-View-onTouchEvent"><span class="nav-number">13.</span> <span class="nav-text">13 View.onTouchEvent</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: true,
+        notify: true,
+        appId: 'X19irIYkwb0IQJHtEK8ce5vp-gzGzoHsz',
+        appKey: '857eSi9xXR6h1jtyYzDmDHHG',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        meta:guest,
+        pageSize:'10' || 10,
+        visitor: false
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

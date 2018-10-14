@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="之前一张分析了http1.1协议下的流程，接下来分析http2.0的数据交互流程。">
+<meta name="keywords" content="网络,okhttp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="okhttp详解5">
+<meta property="og:url" content="http://www.diyfuture.cn/2016/01/14/okhttp详解(5).html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="之前一张分析了http1.1协议下的流程，接下来分析http2.0的数据交互流程。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2016-08-03T03:36:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="okhttp详解5">
+<meta name="twitter:description" content="之前一张分析了http1.1协议下的流程，接下来分析http2.0的数据交互流程。">
+
+
+
+
+
+
+  <link rel="canonical" href="http://www.diyfuture.cn/2016/01/14/okhttp详解(5).html"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>okhttp详解5 | Caij</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">厚积薄发</p>
+      
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+    <a href="/about/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-user"></i> <br />About</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="Searching..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.diyfuture.cn/2016/01/14/okhttp详解(5).html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">okhttp详解5
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2016-01-14 00:00:00" itemprop="dateCreated datePublished" datetime="2016-01-14T00:00:00+08:00">2016-01-14</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/网络/" itemprop="url" rel="index"><span itemprop="name">网络</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2016/01/14/okhttp详解(5).html#comments" itemprop="discussionUrl">
+                  <span class="post-meta-item-text">Comments: </span> <span class="post-comments-count valine-comment-count" data-xid="/2016/01/14/okhttp详解(5).html" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>之前一张分析了http1.1协议下的流程，接下来分析http2.0的数据交互流程。  </p>
+<a id="more"></a>    
+<h3 id="一、重要的类简述"><a href="#一、重要的类简述" class="headerlink" title="一、重要的类简述"></a>一、重要的类简述</h3><p>1.FramedTransport包装版的数据请求通道，包含httpConnection成员变量，所有的数据操作都是通过FramedConnection操作。  </p>
+<p>2.FramedConnection数据操作，包含FrameWriter和FrameReader，FramedConnection操作数据通过FrameWriter和FrameReader处理，而FrameWriter和FrameReader则是通过socket的source和sink处理数据。  </p>
+<p>3.FramedStream。http2.0支持多路复用技术，所以FramedStream是保存每个请求数据交互数据。</p>
+<h3 id="二、流程分析"><a href="#二、流程分析" class="headerlink" title="二、流程分析"></a>二、流程分析</h3><p>1.FramedTransport.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writeRequestHeaders</span><span class="params">(Request request)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">   <span class="keyword">if</span> (stream != <span class="keyword">null</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">   httpEngine.writingRequestHeaders();</span><br><span class="line">   <span class="keyword">boolean</span> permitsRequestBody = httpEngine.permitsRequestBody(request);</span><br><span class="line">   List&lt;Header&gt; requestHeaders = framedConnection.getProtocol() == Protocol.HTTP_2</span><br><span class="line">       ? http2HeadersList(request)</span><br><span class="line">       : spdy3HeadersList(request);</span><br><span class="line">   <span class="keyword">boolean</span> hasResponseBody = <span class="keyword">true</span>;</span><br><span class="line">   stream = framedConnection.newStream(requestHeaders, permitsRequestBody, hasResponseBody);</span><br><span class="line">   stream.readTimeout().timeout(httpEngine.client.getReadTimeout(), TimeUnit.MILLISECONDS);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure></p>
+<p>(1)首先生成请求头。<br>(2)生成stream。  </p>
+<p>2.FramedConnection.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> FramedStream <span class="title">newStream</span><span class="params">(<span class="keyword">int</span> associatedStreamId, List&lt;Header&gt; requestHeaders, <span class="keyword">boolean</span> out,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">boolean</span> in)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">boolean</span> outFinished = !out;</span><br><span class="line">  <span class="keyword">boolean</span> inFinished = !in;</span><br><span class="line">  FramedStream stream;</span><br><span class="line">  <span class="keyword">int</span> streamId;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">synchronized</span> (frameWriter) &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (shutdown) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">"shutdown"</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      streamId = nextStreamId;</span><br><span class="line">      nextStreamId += <span class="number">2</span>;</span><br><span class="line">      stream = <span class="keyword">new</span> FramedStream(streamId, <span class="keyword">this</span>, outFinished, inFinished, requestHeaders);</span><br><span class="line">      <span class="keyword">if</span> (stream.isOpen()) &#123;</span><br><span class="line">        streams.put(streamId, stream);</span><br><span class="line">        setIdle(<span class="keyword">false</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (associatedStreamId == <span class="number">0</span>) &#123;</span><br><span class="line">      frameWriter.synStream(outFinished, inFinished, streamId, associatedStreamId,</span><br><span class="line">          requestHeaders);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (client) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"client streams shouldn't have associated stream IDs"</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">// HTTP/2 has a PUSH_PROMISE frame.</span></span><br><span class="line">      frameWriter.pushPromise(associatedStreamId, streamId, requestHeaders);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (!out) &#123;</span><br><span class="line">    frameWriter.flush();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> stream;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>(1)创建stream。streamId是stream的唯一标识，每个请求对应一个streamId，传输数据的时候需要传递这个参数。<br>(2)保存到streams中，并将连接状态设置为非限制。<br>(3)发送请求头数据。  </p>
+<p>3.Http2.Writer.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">   <span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">synStream</span><span class="params">(<span class="keyword">boolean</span> outFinished, <span class="keyword">boolean</span> inFinished,</span></span></span><br><span class="line"><span class="function"><span class="params">       <span class="keyword">int</span> streamId, <span class="keyword">int</span> associatedStreamId, List&lt;Header&gt; headerBlock)</span></span></span><br><span class="line"><span class="function">       <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">     <span class="keyword">if</span> (inFinished) <span class="keyword">throw</span> <span class="keyword">new</span> UnsupportedOperationException();</span><br><span class="line">     <span class="keyword">if</span> (closed) <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">"closed"</span>);</span><br><span class="line">     headers(outFinished, streamId, headerBlock);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">headers</span><span class="params">(<span class="keyword">boolean</span> outFinished, <span class="keyword">int</span> streamId, List&lt;Header&gt; headerBlock)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">     <span class="keyword">if</span> (closed) <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">"closed"</span>);</span><br><span class="line">     hpackWriter.writeHeaders(headerBlock);</span><br><span class="line"></span><br><span class="line">     <span class="keyword">long</span> byteCount = hpackBuffer.size();</span><br><span class="line">     <span class="keyword">int</span> length = (<span class="keyword">int</span>) Math.min(maxFrameSize, byteCount);</span><br><span class="line">     <span class="keyword">byte</span> type = TYPE_HEADERS;</span><br><span class="line">     <span class="keyword">byte</span> flags = byteCount == length ? FLAG_END_HEADERS : <span class="number">0</span>;</span><br><span class="line">     <span class="keyword">if</span> (outFinished) flags |= FLAG_END_STREAM;</span><br><span class="line">     frameHeader(streamId, length, type, flags);</span><br><span class="line">     sink.write(hpackBuffer, length);</span><br><span class="line"></span><br><span class="line">     <span class="keyword">if</span> (byteCount &gt; length) writeContinuationFrames(streamId, byteCount - length);</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">frameHeader</span><span class="params">(<span class="keyword">int</span> streamId, <span class="keyword">int</span> length, <span class="keyword">byte</span> type, <span class="keyword">byte</span> flags)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">     <span class="keyword">if</span> (logger.isLoggable(FINE)) logger.fine(formatHeader(<span class="keyword">false</span>, streamId, length, type, flags));</span><br><span class="line">     <span class="keyword">if</span> (length &gt; maxFrameSize) &#123;</span><br><span class="line">       <span class="keyword">throw</span> illegalArgument(<span class="string">"FRAME_SIZE_ERROR length &gt; %d: %d"</span>, maxFrameSize, length);</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">if</span> ((streamId &amp; <span class="number">0x80000000</span>) != <span class="number">0</span>) <span class="keyword">throw</span> illegalArgument(<span class="string">"reserved bit set: %s"</span>, streamId);</span><br><span class="line">     writeMedium(sink, length);</span><br><span class="line">     sink.writeByte(type &amp; <span class="number">0xff</span>);</span><br><span class="line">     sink.writeByte(flags &amp; <span class="number">0xff</span>);</span><br><span class="line">     sink.writeInt(streamId &amp; <span class="number">0x7fffffff</span>);</span><br><span class="line">   &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure></p>
+<p>(1)首先将请求头写入hpackBuffer中。hpackWriter其实就是将请求头数据压缩处理存放到hpackBuffer中。<br>(2)frameHeader发送请求数据基本参数。<br>(3)发送请求头数据。  </p>
+<ol start="4">
+<li>FramedTransport.java <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> Sink <span class="title">createRequestBody</span><span class="params">(Request request, <span class="keyword">long</span> contentLength)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> stream.getSink();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>获取Sink， 每个请求对应一个stream。  </p>
+<ol start="5">
+<li>FramedTransport.java <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">finishRequest</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  stream.getSink().close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>获取Sink， 每个请求对应一个stream。  </p>
+<p>6.FramedDataSource.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">      <span class="keyword">assert</span> (!Thread.holdsLock(FramedStream.<span class="keyword">this</span>));</span><br><span class="line">      <span class="keyword">synchronized</span> (FramedStream.<span class="keyword">this</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (closed) <span class="keyword">return</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (!sink.finished) &#123;</span><br><span class="line">        <span class="comment">// Emit the remaining data, setting the END_STREAM flag on the last frame.</span></span><br><span class="line">        <span class="keyword">if</span> (sendBuffer.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">          <span class="keyword">while</span> (sendBuffer.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            emitDataFrame(<span class="keyword">true</span>);</span><br><span class="line">          &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="comment">// Send an empty frame just so we can set the END_STREAM flag.</span></span><br><span class="line">          connection.writeData(id, <span class="keyword">true</span>, <span class="keyword">null</span>, <span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">synchronized</span> (FramedStream.<span class="keyword">this</span>) &#123;</span><br><span class="line">        closed = <span class="keyword">true</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      connection.flush();</span><br><span class="line">      cancelStreamIfNecessary();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>7.FramedTransport.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="keyword">public</span> Response.<span class="function">Builder <span class="title">readResponseHeaders</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> framedConnection.getProtocol() == Protocol.HTTP_2</span><br><span class="line">      ? readHttp2HeadersList(stream.getResponseHeaders())</span><br><span class="line">      : readSpdy3HeadersList(stream.getResponseHeaders());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ol start="8">
+<li>FramedStream.java  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> List&lt;Header&gt; <span class="title">getResponseHeaders</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    readTimeout.enter();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="keyword">while</span> (responseHeaders == <span class="keyword">null</span> &amp;&amp; errorCode == <span class="keyword">null</span>) &#123;</span><br><span class="line">        waitForIo();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">      readTimeout.exitAndThrowIfTimedOut();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (responseHeaders != <span class="keyword">null</span>) <span class="keyword">return</span> responseHeaders;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">"stream was reset: "</span> + errorCode);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>这里如果响应头还未返回，阻塞等待。接下来看接收数据。  </p>
+<p>9.Http2.Reader.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line">  <span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">nextFrame</span><span class="params">(Handler handler)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        source.require(<span class="number">9</span>); <span class="comment">// Frame header size</span></span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>; <span class="comment">// This might be a normal socket close.</span></span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">/*  0                   1                   2                   3</span></span><br><span class="line"><span class="comment">       *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span></span><br><span class="line"><span class="comment">       * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment">       * |                 Length (24)                   |</span></span><br><span class="line"><span class="comment">---</span></span><br><span class="line"><span class="comment">       * |   Type (8)    |   Flags (8)   |</span></span><br><span class="line"><span class="comment">---</span></span><br><span class="line"><span class="comment">       * |R|                 Stream Identifier (31)                      |</span></span><br><span class="line"><span class="comment">       * +=+=============================================================+</span></span><br><span class="line"><span class="comment">       * |                   Frame Payload (0...)                      ...</span></span><br><span class="line"><span class="comment">---</span></span><br><span class="line"><span class="comment">       */</span></span><br><span class="line">      <span class="keyword">int</span> length = readMedium(source);</span><br><span class="line">      <span class="keyword">if</span> (length &lt; <span class="number">0</span> || length &gt; INITIAL_MAX_FRAME_SIZE) &#123;</span><br><span class="line">        <span class="keyword">throw</span> ioException(<span class="string">"FRAME_SIZE_ERROR: %s"</span>, length);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">byte</span> type = (<span class="keyword">byte</span>) (source.readByte() &amp; <span class="number">0xff</span>);</span><br><span class="line">      <span class="keyword">byte</span> flags = (<span class="keyword">byte</span>) (source.readByte() &amp; <span class="number">0xff</span>);</span><br><span class="line">      <span class="keyword">int</span> streamId = (source.readInt() &amp; <span class="number">0x7fffffff</span>); <span class="comment">// Ignore reserved bit.</span></span><br><span class="line">      <span class="keyword">if</span> (logger.isLoggable(FINE)) logger.fine(formatHeader(<span class="keyword">true</span>, streamId, length, type, flags));</span><br><span class="line"></span><br><span class="line">      <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">        <span class="keyword">case</span> TYPE_DATA:</span><br><span class="line">          readData(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> TYPE_HEADERS:</span><br><span class="line">          readHeaders(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> TYPE_PRIORITY:</span><br><span class="line">          readPriority(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> TYPE_RST_STREAM:</span><br><span class="line">          readRstStream(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> TYPE_SETTINGS:</span><br><span class="line">          readSettings(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> TYPE_PUSH_PROMISE:</span><br><span class="line">          readPushPromise(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> TYPE_PING:</span><br><span class="line">          readPing(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> TYPE_GOAWAY:</span><br><span class="line">          readGoAway(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> TYPE_WINDOW_UPDATE:</span><br><span class="line">          readWindowUpdate(handler, length, flags, streamId);</span><br><span class="line">          <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">          <span class="comment">// Implementations MUST discard frames that have unknown or unsupported types.</span></span><br><span class="line">          source.skip(length);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里根据服务器返回的类型保存数据。  </p>
+<p>10.Http2.Reader.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">readHeaders</span><span class="params">(Handler handler, <span class="keyword">int</span> length, <span class="keyword">byte</span> flags, <span class="keyword">int</span> streamId)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (streamId == <span class="number">0</span>) <span class="keyword">throw</span> ioException(<span class="string">"PROTOCOL_ERROR: TYPE_HEADERS streamId == 0"</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">boolean</span> endStream = (flags &amp; FLAG_END_STREAM) != <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">short</span> padding = (flags &amp; FLAG_PADDED) != <span class="number">0</span> ? (<span class="keyword">short</span>) (source.readByte() &amp; <span class="number">0xff</span>) : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> ((flags &amp; FLAG_PRIORITY) != <span class="number">0</span>) &#123;</span><br><span class="line">    readPriority(handler, streamId);</span><br><span class="line">    length -= <span class="number">5</span>; <span class="comment">// account for above read.</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  length = lengthWithoutPadding(length, flags, padding);</span><br><span class="line"></span><br><span class="line">  List&lt;Header&gt; headerBlock = readHeaderBlock(length, padding, flags, streamId);</span><br><span class="line"></span><br><span class="line">  handler.headers(<span class="keyword">false</span>, endStream, streamId, -<span class="number">1</span>, headerBlock, HeadersMode.HTTP_20_HEADERS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>11.FramedConnection.Reader.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"> <span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">headers</span><span class="params">(<span class="keyword">boolean</span> outFinished, <span class="keyword">boolean</span> inFinished, <span class="keyword">int</span> streamId,</span></span></span><br><span class="line"><span class="function"><span class="params">     <span class="keyword">int</span> associatedStreamId, List&lt;Header&gt; headerBlock, HeadersMode headersMode)</span> </span>&#123;</span><br><span class="line">...</span><br><span class="line">   FramedStream stream;</span><br><span class="line">   <span class="keyword">synchronized</span> (FramedConnection.<span class="keyword">this</span>) &#123;</span><br><span class="line">     <span class="comment">// If we're shutdown, don't bother with this stream.</span></span><br><span class="line">     <span class="keyword">if</span> (shutdown) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">     stream = getStream(streamId);</span><br><span class="line"></span><br><span class="line">     <span class="keyword">if</span> (stream == <span class="keyword">null</span>) &#123;</span><br><span class="line">       ...</span><br><span class="line">     &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   ....</span><br><span class="line"></span><br><span class="line">   <span class="comment">// Update an existing stream.</span></span><br><span class="line">   stream.receiveHeaders(headerBlock, headersMode);</span><br><span class="line">   <span class="keyword">if</span> (inFinished) stream.receiveFin();</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure></p>
+<p>(1)根据streamId查找已存在的stream。<br>(2)将数据保存在stream中。  </p>
+<p>12.FramedStream.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">receiveHeaders</span><span class="params">(List&lt;Header&gt; headers, HeadersMode headersMode)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">assert</span> (!Thread.holdsLock(FramedStream.<span class="keyword">this</span>));</span><br><span class="line">  ErrorCode errorCode = <span class="keyword">null</span>;</span><br><span class="line">  <span class="keyword">boolean</span> open = <span class="keyword">true</span>;</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (responseHeaders == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (headersMode.failIfHeadersAbsent()) &#123;</span><br><span class="line">        errorCode = ErrorCode.PROTOCOL_ERROR;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        responseHeaders = headers;</span><br><span class="line">        open = isOpen();</span><br><span class="line">        notifyAll();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (headersMode.failIfHeadersPresent()) &#123;</span><br><span class="line">        errorCode = ErrorCode.STREAM_IN_USE;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        List&lt;Header&gt; newHeaders = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        newHeaders.addAll(responseHeaders);</span><br><span class="line">        newHeaders.addAll(headers);</span><br><span class="line">        <span class="keyword">this</span>.responseHeaders = newHeaders;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (errorCode != <span class="keyword">null</span>) &#123;</span><br><span class="line">    closeLater(errorCode);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!open) &#123;</span><br><span class="line">    connection.removeStream(id);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>(1)保存headers。<br>(2)唤醒等待。  </p>
+<p>13.FramedTransport.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> ResponseBody <span class="title">openResponseBody</span><span class="params">(Response response)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> RealResponseBody(response.headers(), Okio.buffer(stream.getSource()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>获取stream中的Source。下面继续分析Source中的数据获取。  </p>
+<p>14.FramedConnection.Reader.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">readData</span><span class="params">(Handler handler, <span class="keyword">int</span> length, <span class="keyword">byte</span> flags, <span class="keyword">int</span> streamId)</span></span></span><br><span class="line"><span class="function">       <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">     <span class="comment">// <span class="doctag">TODO:</span> checkState open or half-closed (local) or raise STREAM_CLOSED</span></span><br><span class="line">     <span class="keyword">boolean</span> inFinished = (flags &amp; FLAG_END_STREAM) != <span class="number">0</span>;</span><br><span class="line">     <span class="keyword">boolean</span> gzipped = (flags &amp; FLAG_COMPRESSED) != <span class="number">0</span>;</span><br><span class="line">     <span class="keyword">if</span> (gzipped) &#123;</span><br><span class="line">       <span class="keyword">throw</span> ioException(<span class="string">"PROTOCOL_ERROR: FLAG_COMPRESSED without SETTINGS_COMPRESS_DATA"</span>);</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     <span class="keyword">short</span> padding = (flags &amp; FLAG_PADDED) != <span class="number">0</span> ? (<span class="keyword">short</span>) (source.readByte() &amp; <span class="number">0xff</span>) : <span class="number">0</span>;</span><br><span class="line">     length = lengthWithoutPadding(length, flags, padding);</span><br><span class="line"></span><br><span class="line">     handler.data(inFinished, streamId, source, length);</span><br><span class="line">     source.skip(padding);</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure></p>
+<p>还是通过第9步中获取数据。</p>
+<p>15.FramedConnection.Reader.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">data</span><span class="params">(<span class="keyword">boolean</span> inFinished, <span class="keyword">int</span> streamId, BufferedSource source, <span class="keyword">int</span> length)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">  FramedStream dataStream = getStream(streamId);</span><br><span class="line">  ...</span><br><span class="line">  dataStream.receiveData(source, length);</span><br><span class="line">  <span class="keyword">if</span> (inFinished) &#123;</span><br><span class="line">    dataStream.receiveFin();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>16.FramedStream.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">receiveData</span><span class="params">(BufferedSource in, <span class="keyword">int</span> length)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">assert</span> (!Thread.holdsLock(FramedStream.<span class="keyword">this</span>));</span><br><span class="line">  <span class="keyword">this</span>.source.receive(in, length);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>17.FramedDataSource.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">receive</span><span class="params">(BufferedSource in, <span class="keyword">long</span> byteCount)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">assert</span> (!Thread.holdsLock(FramedStream.<span class="keyword">this</span>));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (byteCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">boolean</span> finished;</span><br><span class="line">    <span class="keyword">boolean</span> flowControlError;</span><br><span class="line">    <span class="keyword">synchronized</span> (FramedStream.<span class="keyword">this</span>) &#123;</span><br><span class="line">      finished = <span class="keyword">this</span>.finished;</span><br><span class="line">      flowControlError = byteCount + readBuffer.size() &gt; maxByteCount;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If the peer sends more data than we can handle, discard it and close the connection.</span></span><br><span class="line">    <span class="keyword">if</span> (flowControlError) &#123;</span><br><span class="line">      in.skip(byteCount);</span><br><span class="line">      closeLater(ErrorCode.FLOW_CONTROL_ERROR);</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Discard data received after the stream is finished. It's probably a benign race.</span></span><br><span class="line">    <span class="keyword">if</span> (finished) &#123;</span><br><span class="line">      in.skip(byteCount);</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Fill the receive buffer without holding any locks.</span></span><br><span class="line">    <span class="keyword">long</span> read = in.read(receiveBuffer, byteCount);</span><br><span class="line">    <span class="keyword">if</span> (read == -<span class="number">1</span>) <span class="keyword">throw</span> <span class="keyword">new</span> EOFException();</span><br><span class="line">    byteCount -= read;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Move the received data to the read buffer to the reader can read it.</span></span><br><span class="line">    <span class="keyword">synchronized</span> (FramedStream.<span class="keyword">this</span>) &#123;</span><br><span class="line">      <span class="keyword">boolean</span> wasEmpty = readBuffer.size() == <span class="number">0</span>;</span><br><span class="line">      readBuffer.writeAll(receiveBuffer);</span><br><span class="line">      <span class="keyword">if</span> (wasEmpty) &#123;</span><br><span class="line">        FramedStream.<span class="keyword">this</span>.notifyAll();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里是一个自定义的Source来保存数据，不像http1.1直接使用socket包装的source。</p>
+<p>18.HttpEngine.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Response <span class="title">getResponse</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (userResponse == <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException();</span><br><span class="line">  <span class="keyword">return</span> userResponse;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>之前几步已经分析，最后请求的数据会赋值给userResponse，最后获取的时候直接返回userResponse。 </p>
+<p>19.HttpEngine.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">releaseConnection</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (transport != <span class="keyword">null</span> &amp;&amp; connection != <span class="keyword">null</span>) &#123;</span><br><span class="line">    transport.releaseConnectionOnIdle();</span><br><span class="line">  &#125;</span><br><span class="line">  connection = <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>20.FramedTransport.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">releaseConnectionOnIdle</span><span class="params">()</span> </span>&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>因为http2.0每个连接默认复用，所以不需要释放。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij</li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.diyfuture.cn/2016/01/14/okhttp详解(5).html" title="okhttp详解5">http://www.diyfuture.cn/2016/01/14/okhttp详解(5).html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="" rel="external nofollow" target="_blank">转载必须联系作者</a> unless stating additionally.</li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/网络/" rel="tag"># 网络</a>
+          
+            <a href="/tags/okhttp/" rel="tag"># okhttp</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/13/okhttp详解(4).html" rel="next" title="okhttp详解4">
+                <i class="fa fa-chevron-left"></i> okhttp详解4
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/02/24/HashMap解析.html" rel="prev" title="HashMap源码解析">
+                HashMap源码解析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Caij</p>
+              <p class="site-description motion-element" itemprop="description">厚积薄发</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">43</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">categories</span>
+                  
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">25</span>
+                    <span class="site-state-item-name">tags</span>
+                  
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/caij" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#一、重要的类简述"><span class="nav-number">1.</span> <span class="nav-text">一、重要的类简述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#二、流程分析"><span class="nav-number">2.</span> <span class="nav-text">二、流程分析</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+	
+    
+
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  
+  
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(function (item) {
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: true,
+        notify: true,
+        appId: 'X19irIYkwb0IQJHtEK8ce5vp-gzGzoHsz',
+        appKey: '857eSi9xXR6h1jtyYzDmDHHG',
+        placeholder: 'Just go go',
+        avatar:'mm',
+        meta:guest,
+        pageSize:'10' || 10,
+        visitor: false
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
