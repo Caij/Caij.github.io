@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title><![CDATA[Sea客户端]]></title>
-    <url>%2F2018%2F04%2F25%2Fsea%E5%AE%A2%E6%88%B7%E7%AB%AF.html</url>
+    <title><![CDATA[See客户端]]></title>
+    <url>%2F2018%2F04%2F25%2Fsee%E5%AE%A2%E6%88%B7%E7%AB%AF.html</url>
     <content type="text"><![CDATA[主要是浏览新闻、微博等内容的客户端，提供简单易用的操作。 点击下载]]></content>
   </entry>
   <entry>
@@ -121,17 +121,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[LinkedHashMap源码解析]]></title>
-    <url>%2F2016%2F02%2F24%2FLinkedHashMap%E8%A7%A3%E6%9E%90.html</url>
-    <content type="text"><![CDATA[之前分析过HashMap的源码，LinkedHashMap是继承自HashMap，将HashMap中的数据增加了一种链表结构。大部分方法是相同的，流程也一样，不同是createEntry和transfer方法，还有Entry的数据结构。Entry在之前的基础上添加了before和after。 LinkedHashMap提供特殊的构造方法来创建链接哈希映射，该哈希映射的迭代顺序就是最后访问其条目的顺序，从近期访问最少到近期访问最多的顺序（访问顺序）。这种映射很适合构建 LRU 缓存。Android中的图片缓存中经常用到。 2.成员变量12private transient Entry&lt;K,V&gt; header; //表示维护链表的头节点。private final boolean accessOrder; //表示是否按照最后访问其条目的顺序重新排序。 表示任务队列。 3.方法1234567void createEntry(int hash, K key, V value, int bucketIndex) &#123; HashMap.Entry&lt;K,V&gt; old = table[bucketIndex]; Entry&lt;K,V&gt; e = new Entry&lt;&gt;(hash, key, value, old); table[bucketIndex] = e; e.addBefore(header); size++;&#125; 在之前的基础上还维护了一种链表结构。将新添加的数据放在链表最后面 123456private void addBefore(Entry&lt;K,V&gt; existingEntry) &#123; after = existingEntry; before = existingEntry.before; before.after = this; after.before = this;&#125; 这个方法就是将当期元素放在列表的最后面。 1234567public V get(Object key) &#123; Entry&lt;K,V&gt; e = (Entry&lt;K,V&gt;)getEntry(key); if (e == null) return null; e.recordAccess(this); return e.value;&#125; getEntry是HashMap中的方法，没有重写。获取元素后会重新排序链表。 12345678void recordAccess(HashMap&lt;K,V&gt; m) &#123; LinkedHashMap&lt;K,V&gt; lm = (LinkedHashMap&lt;K,V&gt;)m; if (lm.accessOrder) &#123; lm.modCount++; remove(); addBefore(lm.header); &#125;&#125; accessOrder表示是否需要重新排序。 1234567891011private void remove() &#123; before.after = after; after.before = before;&#125;private void addBefore(Entry&lt;K,V&gt; existingEntry) &#123; after = existingEntry; before = existingEntry.before; before.after = this; after.before = this;&#125; 这两个方法就是将当期元素从当前位置移动到最后的位置。]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-      <tags>
-        <tag>集合</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[ThreadPoolExecutor源码解析]]></title>
     <url>%2F2016%2F02%2F24%2FThreadPoolExecutor%E8%A7%A3%E6%9E%90.html</url>
     <content type="text"><![CDATA[线程池程序开发中经常用到，比如网络和本地数据的访问 ，使用线程池能有效的控制线程数量，避免线程的频繁创建和回收。 1.成员变量1private final BlockingQueue&lt;Runnable&gt; workQueue; 表示任务队列。 1private final HashSet&lt;Worker&gt; workers = new HashSet&lt;Worker&gt;(); Worker可以理解为发动机，每个Worker都会开启一个线程，workers表示存放线程的集合。 1private volatile long keepAliveTime; keepAliveTime表示线程活跃时间。因为线程池有核心线程个数，有最大线程个数，当线程池中的线程大于核心线程数时，线程的闲置时间超过keepAliveTime将会被回收。 12345private volatile int corePoolSize;private volatile int maximumPoolSize;private volatile int poolSize; 分别表示核心线程个数，最大线程个数，当前线程个数。 1private volatile ThreadFactory threadFactory; 用于创建线程的工厂。 12private static final RejectedExecutionHandler defaultHandler = new AbortPolicy(); 当线程池中的线程数量和任务数量都达到最大值，就会抛出异常给RejectedExecutionHandler处理。 2.核心方法流程12345678910public void execute(Runnable command) &#123; if (poolSize &gt;= corePoolSize || !addIfUnderCorePoolSize(command)) &#123; if (runState == RUNNING &amp;&amp; workQueue.offer(command)) &#123; if (runState != RUNNING || poolSize == 0) ensureQueuedTaskHandled(command); &#125; else if (!addIfUnderMaximumPoolSize(command)) reject(command); // is shutdown or saturated &#125;&#125; (1)当当前线程个数小于核心线程个数，则会调用addIfUnderCorePoolSize。(2)当当前线程个数大于核心线程个数进行下一步处理。 123456789101112private boolean addIfUnderCorePoolSize(Runnable firstTask) &#123; Thread t = null; final ReentrantLock mainLock = this.mainLock; mainLock.lock(); try &#123; if (poolSize &lt; corePoolSize &amp;&amp; runState == RUNNING) t = addThread(firstTask); &#125; finally &#123; mainLock.unlock(); &#125; return t != null;&#125; 判断前线程个数小于核心线程个数，true则添加线程。 1234567891011121314151617181920212223private Thread addThread(Runnable firstTask) &#123; Worker w = new Worker(firstTask); Thread t = threadFactory.newThread(w); boolean workerStarted = false; if (t != null) &#123; if (t.isAlive()) // precheck that t is startable throw new IllegalThreadStateException(); w.thread = t; workers.add(w); int nt = ++poolSize; if (nt &gt; largestPoolSize) largestPoolSize = nt; try &#123; t.start(); workerStarted = true; &#125; finally &#123; if (!workerStarted) workers.remove(w); &#125; &#125; return t;&#125; 创建新线程并启动。 ThreadPoolExecutor.Worker12345678910111213public void run() &#123; try &#123; hasRun = true; Runnable task = firstTask; firstTask = null; while (task != null || (task = getTask()) != null) &#123; runTask(task); task = null; &#125; &#125; finally &#123; workerDone(this); &#125;&#125; 首先运行初始化的第一个任务，后续从队列中获取任务。 ThreadPoolExecutor.Worker1234567891011121314151617181920212223242526Runnable getTask() &#123; for (;;) &#123; try &#123; int state = runState; if (state &gt; SHUTDOWN) return null; Runnable r; if (state == SHUTDOWN) // Help drain queue r = workQueue.poll(); else if (poolSize &gt; corePoolSize || allowCoreThreadTimeOut) r = workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS); else r = workQueue.take(); if (r != null) return r; if (workerCanExit()) &#123; if (runState &gt;= SHUTDOWN) // Wake up others interruptIdleWorkers(); return null; &#125; // Else retry &#125; catch (InterruptedException ie) &#123; // On interruption, re-check runState &#125; &#125;&#125; (1)线程已经停止，直接把任务队列中的数据获取出来，不阻塞登录获取。(2)这里第二个判断条件是回收线程的重要的地方，在约定时间内获取任务，如果没有则返回null。(3)阻塞等待获取任务。(4)判断当前线程是否可用回收。 3. 添加任务处理流程当一个任务通过execute(Runnable)方法欲添加到线程池时：如果当前线程池中的数量小于corePoolSize，并线程池处于Running状态，创建并添加的任务。如果当前线程池中的数量等于corePoolSize，并线程池处于Running状态，缓冲队列 workQueue未满，那么任务被放入缓冲队列、等待任务调度执行。如果当前线程池中的数量大于corePoolSize，缓冲队列workQueue已满，并且线程池中的数量小于maximumPoolSize，新提交任务会创建新线程执行任务。如果当前线程池中的数量大于corePoolSize，缓冲队列workQueue已满，并且线程池中的数量等于maximumPoolSize，新提交任务由Handler处理。当线程池中的线程大于corePoolSize时，多余线程空闲时间超过keepAliveTime时，会关闭这部分线程。]]></content>
@@ -140,6 +129,17 @@
       </categories>
       <tags>
         <tag>线程池</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[LinkedHashMap源码解析]]></title>
+    <url>%2F2016%2F02%2F24%2FLinkedHashMap%E8%A7%A3%E6%9E%90.html</url>
+    <content type="text"><![CDATA[之前分析过HashMap的源码，LinkedHashMap是继承自HashMap，将HashMap中的数据增加了一种链表结构。大部分方法是相同的，流程也一样，不同是createEntry和transfer方法，还有Entry的数据结构。Entry在之前的基础上添加了before和after。 LinkedHashMap提供特殊的构造方法来创建链接哈希映射，该哈希映射的迭代顺序就是最后访问其条目的顺序，从近期访问最少到近期访问最多的顺序（访问顺序）。这种映射很适合构建 LRU 缓存。Android中的图片缓存中经常用到。 2.成员变量12private transient Entry&lt;K,V&gt; header; //表示维护链表的头节点。private final boolean accessOrder; //表示是否按照最后访问其条目的顺序重新排序。 表示任务队列。 3.方法1234567void createEntry(int hash, K key, V value, int bucketIndex) &#123; HashMap.Entry&lt;K,V&gt; old = table[bucketIndex]; Entry&lt;K,V&gt; e = new Entry&lt;&gt;(hash, key, value, old); table[bucketIndex] = e; e.addBefore(header); size++;&#125; 在之前的基础上还维护了一种链表结构。将新添加的数据放在链表最后面 123456private void addBefore(Entry&lt;K,V&gt; existingEntry) &#123; after = existingEntry; before = existingEntry.before; before.after = this; after.before = this;&#125; 这个方法就是将当期元素放在列表的最后面。 1234567public V get(Object key) &#123; Entry&lt;K,V&gt; e = (Entry&lt;K,V&gt;)getEntry(key); if (e == null) return null; e.recordAccess(this); return e.value;&#125; getEntry是HashMap中的方法，没有重写。获取元素后会重新排序链表。 12345678void recordAccess(HashMap&lt;K,V&gt; m) &#123; LinkedHashMap&lt;K,V&gt; lm = (LinkedHashMap&lt;K,V&gt;)m; if (lm.accessOrder) &#123; lm.modCount++; remove(); addBefore(lm.header); &#125;&#125; accessOrder表示是否需要重新排序。 1234567891011private void remove() &#123; before.after = after; after.before = before;&#125;private void addBefore(Entry&lt;K,V&gt; existingEntry) &#123; after = existingEntry; before = existingEntry.before; before.after = this; after.before = this;&#125; 这两个方法就是将当期元素从当前位置移动到最后的位置。]]></content>
+      <categories>
+        <category>数据结构</category>
+      </categories>
+      <tags>
+        <tag>集合</tag>
       </tags>
   </entry>
   <entry>
