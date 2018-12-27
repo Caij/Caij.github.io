@@ -109,24 +109,24 @@
   <meta name="description" content="1 介绍Handler在Android中起到至关重要的作用，系统本就是通过Handler的消息来驱动的，另外一个就是在Android系统中，只有主线程才能修改UI，而且存在ANR机制，所以耗时操作需要在子线程中运行，保证程序的流畅性，因此子线程中获取的数据传递给主线程更新UI，而线程通讯就是通过Handler来处理的。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Handler 源码解析">
-<meta property="og:url" content="http://www.diyfuture.cn/2014/12/26/Handler源码解析.html">
+<meta property="og:url" content="http://www.fuckcode.xyz/2014/12/26/Handler源码解析.html">
 <meta property="og:site_name" content="Caij">
 <meta property="og:description" content="1 介绍Handler在Android中起到至关重要的作用，系统本就是通过Handler的消息来驱动的，另外一个就是在Android系统中，只有主线程才能修改UI，而且存在ANR机制，所以耗时操作需要在子线程中运行，保证程序的流畅性，因此子线程中获取的数据传递给主线程更新UI，而线程通讯就是通过Handler来处理的。">
 <meta property="og:locale" content="en">
-<meta property="og:image" content="http://www.diyfuture.cn/images/handler/HandlerUML.png">
-<meta property="og:image" content="http://www.diyfuture.cn/images/handler/HandlerSqu.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/images/handler/HandlerUML.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/images/handler/HandlerSqu.png">
 <meta property="og:updated_time" content="2018-04-21T11:34:26.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Handler 源码解析">
 <meta name="twitter:description" content="1 介绍Handler在Android中起到至关重要的作用，系统本就是通过Handler的消息来驱动的，另外一个就是在Android系统中，只有主线程才能修改UI，而且存在ANR机制，所以耗时操作需要在子线程中运行，保证程序的流畅性，因此子线程中获取的数据传递给主线程更新UI，而线程通讯就是通过Handler来处理的。">
-<meta name="twitter:image" content="http://www.diyfuture.cn/images/handler/HandlerUML.png">
+<meta name="twitter:image" content="http://www.fuckcode.xyz/images/handler/HandlerUML.png">
 
 
 
 
 
 
-  <link rel="canonical" href="http://www.diyfuture.cn/2014/12/26/Handler源码解析.html"/>
+  <link rel="canonical" href="http://www.fuckcode.xyz/2014/12/26/Handler源码解析.html"/>
 
 
 
@@ -324,7 +324,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://www.diyfuture.cn/2014/12/26/Handler源码解析.html">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2014/12/26/Handler源码解析.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Caij">
@@ -446,7 +446,7 @@
     <strong>Post author:  </strong>Caij</li>
   <li class="post-copyright-link">
     <strong>Post link: </strong>
-    <a href="http://www.diyfuture.cn/2014/12/26/Handler源码解析.html" title="Handler 源码解析">http://www.diyfuture.cn/2014/12/26/Handler源码解析.html</a>
+    <a href="http://www.fuckcode.xyz/2014/12/26/Handler源码解析.html" title="Handler 源码解析">http://www.fuckcode.xyz/2014/12/26/Handler源码解析.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="" rel="external nofollow" target="_blank">转载必须联系作者</a> unless stating additionally.</li>
@@ -551,7 +551,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">44</span>
+                    <span class="site-state-item-count">43</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
@@ -735,6 +735,8 @@
   <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
 
 
+
+  <div class="footer-custom">Hosted by <a target="_blank" rel="external nofollow" href="https://pages.coding.me"><b>Coding Pages</b></a></div>
 
 
         
