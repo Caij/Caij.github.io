@@ -113,7 +113,7 @@
 <meta property="og:site_name" content="Caij">
 <meta property="og:description" content="随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，目前超过10MB、20MB的apk已经是很常见的事情了，但是依然能够看到一些apk的体积控制的很小。">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2019-03-11T09:00:24.856Z">
+<meta property="og:updated_time" content="2019-03-13T01:35:31.871Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="App体积优化">
 <meta name="twitter:description" content="随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，目前超过10MB、20MB的apk已经是很常见的事情了，但是依然能够看到一些apk的体积控制的很小。">
@@ -426,7 +426,7 @@
 <h1 id="3-其他"><a href="#3-其他" class="headerlink" title="3 其他"></a>3 其他</h1><h2 id="3-1-微信AndResGuard"><a href="#3-1-微信AndResGuard" class="headerlink" title="3.1 微信AndResGuard"></a>3.1 微信AndResGuard</h2><p>使用AndResGuard，体积能减少1-2M，而且能混淆资源。其原理和proguard类似，混淆路径，减小路径长度，最终减小arsc文件的大小；开启7zip压缩，对apk重新多重压缩。<br>坑：因为混淆资源路径，所以使用getIdentifier的方法是获取不到资源的。这里也是通过项目禁止使用getIdentifier方法获取资源。</p>
 <h2 id="3-2-使用redex"><a href="#3-2-使用redex" class="headerlink" title="3.2 使用redex"></a>3.2 使用redex</h2><p>其实使用Redex比较简单，按照官网的来。我们遇到的问题是，去除单实现接口，这个选项我们关闭了，因为这个选项开启，需要改动较大，而且需要配置较多的白名单。其他没什么问题。<br>这块大小我测试，开启全部的选项，在去除无用代码和开启proguard后，，dex能缩小8%， 如果去除SingleImplPass的选项，大概只有3%。</p>
 <h1 id="4-遇到的问题"><a href="#4-遇到的问题" class="headerlink" title="4 遇到的问题"></a>4 遇到的问题</h1><ol>
-<li>比如清除无用资源有个很大的问题就是通过getIdentifier获取资源的时候，无法通过攻击查找到，所以我们直接在代码扫描规则中禁止使用这个方法。</li>
+<li>比如清除无用资源时候无法查找使用getIdentifier引用的资源，导致删除资源后闪退问题，所以我们直接在代码扫描规则中禁止使用getIdentifier这个方法。</li>
 <li>AndResGuard 因为混淆资源路径，所以使用getIdentifier的方法是获取不到资源的。这里也是通过项目禁止使用getIdentifier方法获取资源。</li>
 <li>在使用矢量图的过程中，在部分系统控件闪退的问题。</li>
 </ol>
