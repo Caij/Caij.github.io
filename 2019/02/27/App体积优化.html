@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/image/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/image/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://www.fuckcode.xyz').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，目前超过10MB、20MB的apk已经是很常见的事情了，但是依然能够看到一些apk的体积控制的很小。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="App体积优化">
+<meta property="og:url" content="http://www.fuckcode.xyz/2019/02/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，目前超过10MB、20MB的apk已经是很常见的事情了，但是依然能够看到一些apk的体积控制的很小。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2019-02-26T16:00:00.000Z">
+<meta property="article:modified_time" content="2019-03-14T12:48:14.000Z">
+<meta property="article:author" content="Caij">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://www.fuckcode.xyz/2019/02/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>App体积优化 | Caij</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">厚积薄发</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="Searching..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2019/02/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          App体积优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-02-27 00:00:00" itemprop="dateCreated datePublished" datetime="2019-02-27T00:00:00+08:00">2019-02-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-03-14 20:48:14" itemprop="dateModified" datetime="2019-03-14T20:48:14+08:00">2019-03-14</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，<br>目前超过10MB、20MB的apk已经是很常见的事情了，但是依然能够看到一些apk的体积控制的很小。</p>
+<a id="more"></a>  
+
+<p>apk体积增大源于：</p>
+<p>新需求不断的提出<br>需要支持高分辨率的屏幕而加入了高分图片<br>依赖了更多的第三方库</p>
+<p>其实优化主要是两块，dex和资源。</p>
+<h1 id="1-代码优化"><a href="#1-代码优化" class="headerlink" title="1.代码优化"></a>1.代码优化</h1><ol>
+<li>使用lint或其他工具扫描无用代码。</li>
+<li>使用开源库的时候综合分析，选择好的lib能够减少代码</li>
+<li>使用ProGuard代码混淆，能够很大程度减小dex大小</li>
+</ol>
+<h1 id="2-资源优化"><a href="#2-资源优化" class="headerlink" title="2 资源优化"></a>2 资源优化</h1><ol>
+<li>lint扫描无用资源。</li>
+<li>使用 shrinkResources true属性，这里shrinkResources属性的作用并不大，因为在扫描无用资源过程中， 系统为了避免使用getIdentifier过程找不到资源，所以在清除资源的时候条件判断非常严格，经过测试，这个功能非常鸡肋，大量无用的资源无法删除。</li>
+<li>支持特定的分辨率。现在大部分手机都是1080p，对应的xxhdpi的资源，所以我们只支持xxhdpi的资源，其他屏幕即使大一点，图片放大也不会太模糊。</li>
+<li>图片压缩。常规的png图片压缩，png转webp， 在转webp的时候注意最终的压缩大小，webp的一些压缩方式可能比png大。webp格式4.0+都支持，对于包含透明度的4.2+才支持。这里我们测试先对png压缩，在将压缩的png转webp，压缩效果更好。</li>
+<li>使用矢量图。 这个在我项目中后面大量用到了，缺点就是对5.+的系统支持的比较好，低版本也有support库支持。</li>
+</ol>
+<h1 id="3-其他"><a href="#3-其他" class="headerlink" title="3 其他"></a>3 其他</h1><h2 id="3-1-微信AndResGuard"><a href="#3-1-微信AndResGuard" class="headerlink" title="3.1 微信AndResGuard"></a>3.1 微信AndResGuard</h2><p>使用AndResGuard，体积能减少1-2M，而且能混淆资源。其原理和proguard类似，混淆路径，减小路径长度，最终减小arsc文件的大小；开启7zip压缩，对apk重新多重压缩。<br>坑：因为混淆资源路径，所以使用getIdentifier的方法是获取不到资源的。这里也是通过项目禁止使用getIdentifier方法获取资源。</p>
+<h2 id="3-2-使用redex"><a href="#3-2-使用redex" class="headerlink" title="3.2 使用redex"></a>3.2 使用redex</h2><p>其实使用Redex比较简单，按照官网的来。我们遇到的问题是，去除单实现接口，这个选项我们关闭了，因为这个选项开启，需要改动较大，而且需要配置较多的白名单。其他没什么问题。<br>这块大小我测试，开启全部的选项，在去除无用代码和开启proguard后，，dex能缩小8%， 如果去除SingleImplPass的选项，大概只有3%。</p>
+<h1 id="4-遇到的问题"><a href="#4-遇到的问题" class="headerlink" title="4 遇到的问题"></a>4 遇到的问题</h1><ol>
+<li>比如清除无用资源时候无法查找使用getIdentifier引用的资源，导致删除资源后闪退问题，所以我们直接在代码扫描规则中禁止使用getIdentifier这个方法。</li>
+<li>AndResGuard 因为混淆资源路径，所以使用getIdentifier的方法是获取不到资源的。这里也是通过项目禁止使用getIdentifier方法获取资源。</li>
+<li>在使用矢量图的过程中，在部分系统控件闪退的问题。</li>
+</ol>
+<h1 id="5-维持"><a href="#5-维持" class="headerlink" title="5 维持"></a>5 维持</h1><ol>
+<li>无用资源和代码我们qa有脚本定时扫描，能够很好的解决。</li>
+<li>引入第三方lib需要组长审核。</li>
+<li>图片压缩通过gradle插件执行。</li>
+<li>集成微信apkcanary，输出每个版本apk文件大小及每个组成部分的大小，并生成html，保存这些文件，在后续的版本中对比。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.fuckcode.xyz/2019/02/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html" title="App体积优化">http://www.fuckcode.xyz/2019/02/27/App体积优化.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/02/27/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html" rel="prev" title="App启动优化">
+      <i class="fa fa-chevron-left"></i> App启动优化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/10/07/Android%E5%8D%87%E7%BA%A764%E9%81%87%E5%88%B0%E7%9A%84%E5%9D%91.html" rel="next" title="Android升级64位遇到的问题和解决方案">
+      Android升级64位遇到的问题和解决方案 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-代码优化"><span class="nav-number">1.</span> <span class="nav-text">1.代码优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-资源优化"><span class="nav-number">2.</span> <span class="nav-text">2 资源优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-其他"><span class="nav-number">3.</span> <span class="nav-text">3 其他</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-微信AndResGuard"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 微信AndResGuard</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-使用redex"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 使用redex</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-遇到的问题"><span class="nav-number">4.</span> <span class="nav-text">4 遇到的问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-维持"><span class="nav-number">5.</span> <span class="nav-text">5 维持</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Caij</p>
+  <div class="site-description" itemprop="description">厚积薄发</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID: 'af4bd8203af29949fd4c',
+      clientSecret: '9387549fb655911da2509580f429d1210a078c63',
+      repo: 'Caij.github.io',
+      owner: 'Caij',
+      admin: ['Caij'],
+      id: '73275e4d9d9249ad9720f6107aeb7192',
+        language: '',
+      distractionFreeMode: 'true'
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/image/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/image/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://www.fuckcode.xyz').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="上一张分析了主体请求流程，接下来深入的分析流程中的细节，直接看代码。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="okhttp详解2">
+<meta property="og:url" content="http://www.fuckcode.xyz/2016/01/11/okhttp%E8%AF%A6%E8%A7%A3(2).html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="上一张分析了主体请求流程，接下来深入的分析流程中的细节，直接看代码。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2016-01-10T16:00:00.000Z">
+<meta property="article:modified_time" content="2016-08-03T03:36:06.000Z">
+<meta property="article:author" content="Caij">
+<meta property="article:tag" content="网络">
+<meta property="article:tag" content="okhttp">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://www.fuckcode.xyz/2016/01/11/okhttp%E8%AF%A6%E8%A7%A3(2).html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>okhttp详解2 | Caij</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">厚积薄发</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="Searching..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2016/01/11/okhttp%E8%AF%A6%E8%A7%A3(2).html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          okhttp详解2
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-01-11 00:00:00" itemprop="dateCreated datePublished" datetime="2016-01-11T00:00:00+08:00">2016-01-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2016-08-03 11:36:06" itemprop="dateModified" datetime="2016-08-03T11:36:06+08:00">2016-08-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BD%91%E7%BB%9C/" itemprop="url" rel="index">
+                    <span itemprop="name">网络</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>上一张分析了主体请求流程，接下来深入的分析流程中的细节，直接看代码。  </p>
+<a id="more"></a>  
+
+<p>1.HttpEngine.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sendRequest</span><span class="params">()</span> <span class="keyword">throws</span> RequestException, RouteException, IOException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (cacheStrategy != <span class="keyword">null</span>) <span class="keyword">return</span>; <span class="comment">// Already sent.</span></span><br><span class="line">    <span class="keyword">if</span> (transport != <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException();</span><br><span class="line"></span><br><span class="line">    Request request = networkRequest(userRequest);</span><br><span class="line"></span><br><span class="line">    InternalCache responseCache = Internal.instance.internalCache(client);</span><br><span class="line">    Response cacheCandidate = responseCache != <span class="keyword">null</span></span><br><span class="line">        ? responseCache.get(request)</span><br><span class="line">        : <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">long</span> now = System.currentTimeMillis();</span><br><span class="line">    cacheStrategy = <span class="keyword">new</span> CacheStrategy.Factory(now, request, cacheCandidate).get();</span><br><span class="line">    networkRequest = cacheStrategy.networkRequest;</span><br><span class="line">    cacheResponse = cacheStrategy.cacheResponse;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (responseCache != <span class="keyword">null</span>) &#123;</span><br><span class="line">      responseCache.trackResponse(cacheStrategy);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cacheCandidate != <span class="keyword">null</span> &amp;&amp; cacheResponse == <span class="keyword">null</span>) &#123;</span><br><span class="line">      closeQuietly(cacheCandidate.body()); <span class="comment">// The cache candidate wasn't applicable. Close it.</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (networkRequest != <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="comment">// Open a connection unless we inherited one from a redirect.</span></span><br><span class="line">      <span class="keyword">if</span> (connection == <span class="keyword">null</span>) &#123;</span><br><span class="line">        connect();</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      transport = Internal.instance.newTransport(connection, <span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">	  <span class="comment">//这里callerWritesRequestBody为false，在engine实例化的时候赋值</span></span><br><span class="line">      <span class="keyword">if</span> (callerWritesRequestBody &amp;&amp; permitsRequestBody(networkRequest) &amp;&amp; requestBodyOut == <span class="keyword">null</span>) &#123;</span><br><span class="line">		....</span><br><span class="line">	  &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (connection != <span class="keyword">null</span>) &#123;</span><br><span class="line">        Internal.instance.recycle(client.getConnectionPool(), connection);</span><br><span class="line">        connection = <span class="keyword">null</span>;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (cacheResponse != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// We have a valid cached response. Promote it to the user response immediately.</span></span><br><span class="line">        <span class="keyword">this</span>.userResponse = cacheResponse.newBuilder()</span><br><span class="line">            .request(userRequest)</span><br><span class="line">            .priorResponse(stripBody(priorResponse))</span><br><span class="line">            .cacheResponse(stripBody(cacheResponse))</span><br><span class="line">            .build();</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// We're forbidden from using the network, and the cache is insufficient.</span></span><br><span class="line">        <span class="keyword">this</span>.userResponse = <span class="keyword">new</span> Response.Builder()</span><br><span class="line">            .request(userRequest)</span><br><span class="line">            .priorResponse(stripBody(priorResponse))</span><br><span class="line">            .protocol(Protocol.HTTP_1_1)</span><br><span class="line">            .code(<span class="number">504</span>)</span><br><span class="line">            .message(<span class="string">"Unsatisfiable Request (only-if-cached)"</span>)</span><br><span class="line">            .body(EMPTY_BODY)</span><br><span class="line">            .build();</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      userResponse = unzip(userResponse);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>(1)这里首先对request的head部分进行基础的配置。<br>(2)获取本地缓存。（这一块也不做深入分析，有兴趣的可以深入了解，专门分析数据缓存，volley框架中也有比较清晰的逻辑）。<br>(3)如果本地有缓存赋值给存储变量，如果没有缓存直接连接服务器。<br>(4)创建transport。transport包括两种HttpTransport和FrameTransport。</p>
+<p>2.HttpEngine.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Connect to the origin server either directly or via a proxy. */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">connect</span><span class="params">()</span> <span class="keyword">throws</span> RequestException, RouteException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (connection != <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (routeSelector == <span class="keyword">null</span>) &#123;</span><br><span class="line">    address = createAddress(client, networkRequest);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      routeSelector = RouteSelector.get(address, networkRequest, client);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> RequestException(e);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  connection = createNextConnection();</span><br><span class="line">  Internal.instance.connectAndSetOwner(client, connection, <span class="keyword">this</span>);</span><br><span class="line">  route = connection.getRoute();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">private</span> Connection <span class="title">createNextConnection</span><span class="params">()</span> <span class="keyword">throws</span> RouteException </span>&#123;</span><br><span class="line">  ConnectionPool pool = client.getConnectionPool();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Always prefer pooled connections over new connections.</span></span><br><span class="line">  <span class="keyword">for</span> (Connection pooled; (pooled = pool.get(address)) != <span class="keyword">null</span>; ) &#123;</span><br><span class="line">    <span class="keyword">if</span> (networkRequest.method().equals(<span class="string">"GET"</span>) || Internal.instance.isReadable(pooled)) &#123;</span><br><span class="line">      <span class="keyword">return</span> pooled;</span><br><span class="line">    &#125;</span><br><span class="line">    closeQuietly(pooled.getSocket());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    Route route = routeSelector.next();</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> Connection(pool, route);</span><br><span class="line">  &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> RouteException(e);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>(1)根据网络请求创建网络地址。<br>(2)创建连接。首先从连接池总获取连接，如果没有连接则创建新的连接。</p>
+<p>3.ConnectionPool.java  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Returns a recycled connection to &#123;<span class="doctag">@code</span> address&#125;, or null if no such connection exists. */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> Connection <span class="title">get</span><span class="params">(Address address)</span> </span>&#123;</span><br><span class="line">    Connection foundConnection = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">for</span> (Iterator&lt;Connection&gt; i = connections.descendingIterator(); i.hasNext(); ) &#123;</span><br><span class="line">      Connection connection = i.next();</span><br><span class="line">      <span class="keyword">if</span> (!connection.getRoute().getAddress().equals(address)</span><br><span class="line">          || !connection.isAlive()</span><br><span class="line">          || System.nanoTime() - connection.getIdleStartTimeNs() &gt;= keepAliveDurationNs) &#123;</span><br><span class="line">        <span class="keyword">continue</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      i.remove();</span><br><span class="line">      <span class="keyword">if</span> (!connection.isFramed()) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          Platform.get().tagSocket(connection.getSocket());</span><br><span class="line">        &#125; <span class="keyword">catch</span> (SocketException e) &#123;</span><br><span class="line">          Util.closeQuietly(connection.getSocket());</span><br><span class="line">          <span class="comment">// When unable to tag, skip recycling and close</span></span><br><span class="line">          Platform.get().logW(<span class="string">"Unable to tagSocket(): "</span> + e);</span><br><span class="line">          <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      foundConnection = connection;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (foundConnection != <span class="keyword">null</span> &amp;&amp; foundConnection.isFramed()) &#123;</span><br><span class="line">      connections.addFirst(foundConnection); <span class="comment">// Add it back after iteration.</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> foundConnection;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>从连接池中获取连接，判断条件包括地址、socket是否可用，闲置时间是否超时。对于FrameConnection直接重新到连接池中，对于HttpConnection则是请求完成后再添加到连接池中。  </p>
+<p>4.Connection.java  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">  * Connects this connection if it isn't already. This creates tunnels, shares</span></span><br><span class="line"><span class="comment">  * the connection with the connection pool, and configures timeouts.</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="function"><span class="keyword">void</span> <span class="title">connectAndSetOwner</span><span class="params">(OkHttpClient client, Object owner)</span> <span class="keyword">throws</span> RouteException </span>&#123;</span><br><span class="line">   setOwner(owner);</span><br><span class="line"></span><br><span class="line">   <span class="keyword">if</span> (!isConnected()) &#123;</span><br><span class="line">     List&lt;ConnectionSpec&gt; connectionSpecs = route.address.getConnectionSpecs();</span><br><span class="line">     connect(client.getConnectTimeout(), client.getReadTimeout(), client.getWriteTimeout(),</span><br><span class="line">         connectionSpecs, client.getRetryOnConnectionFailure());</span><br><span class="line">     <span class="keyword">if</span> (isFramed()) &#123;</span><br><span class="line">       client.getConnectionPool().share(<span class="keyword">this</span>);</span><br><span class="line">     &#125;</span><br><span class="line">     client.routeDatabase().connected(getRoute());</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   setTimeouts(client.getReadTimeout(), client.getWriteTimeout());</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>(1)设置连接归属，只有对于HttpConnection才会设置。<br>(2)如果是新创建的连接，则连接状态为false，则会开启连接，对于新创建的FrameConnection则会缓存。<br>(3)如果是FrameConnection则放置的连接池中。  </p>
+<p>5.Connection.java  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">connect</span><span class="params">(<span class="keyword">int</span> connectTimeout, <span class="keyword">int</span> readTimeout, <span class="keyword">int</span> writeTimeout,</span></span></span><br><span class="line"><span class="function"><span class="params">      List&lt;ConnectionSpec&gt; connectionSpecs, <span class="keyword">boolean</span> connectionRetryEnabled)</span> <span class="keyword">throws</span> RouteException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (protocol != <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"already connected"</span>);</span><br><span class="line"></span><br><span class="line">    RouteException routeException = <span class="keyword">null</span>;</span><br><span class="line">    ConnectionSpecSelector connectionSpecSelector = <span class="keyword">new</span> ConnectionSpecSelector(connectionSpecs);</span><br><span class="line">    Proxy proxy = route.getProxy();</span><br><span class="line">    Address address = route.getAddress();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (route.address.getSslSocketFactory() == <span class="keyword">null</span></span><br><span class="line">        &amp;&amp; !connectionSpecs.contains(ConnectionSpec.CLEARTEXT)) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> RouteException(<span class="keyword">new</span> UnknownServiceException(</span><br><span class="line">          <span class="string">"CLEARTEXT communication not supported: "</span> + connectionSpecs));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (protocol == <span class="keyword">null</span>) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        socket = proxy.type() == Proxy.Type.DIRECT || proxy.type() == Proxy.Type.HTTP</span><br><span class="line">            ? address.getSocketFactory().createSocket()</span><br><span class="line">            : <span class="keyword">new</span> Socket(proxy);</span><br><span class="line">        connectSocket(connectTimeout, readTimeout, writeTimeout, connectionSpecSelector);</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        Util.closeQuietly(socket);</span><br><span class="line">        socket = <span class="keyword">null</span>;</span><br><span class="line">        handshake = <span class="keyword">null</span>;</span><br><span class="line">        protocol = <span class="keyword">null</span>;</span><br><span class="line">        httpConnection = <span class="keyword">null</span>;</span><br><span class="line">        framedConnection = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (routeException == <span class="keyword">null</span>) &#123;</span><br><span class="line">          routeException = <span class="keyword">new</span> RouteException(e);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          routeException.addConnectException(e);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!connectionRetryEnabled || !connectionSpecSelector.connectionFailed(e)) &#123;</span><br><span class="line">          <span class="keyword">throw</span> routeException;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>proxy.type()为Proxy.Type.HTTP，所以走 socket = address.getSocketFactory().createSocket()；</p>
+<p>6.Connection.java  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Does all the work necessary to build a full HTTP or HTTPS connection on a raw socket. */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">connectSocket</span><span class="params">(<span class="keyword">int</span> connectTimeout, <span class="keyword">int</span> readTimeout, <span class="keyword">int</span> writeTimeout,</span></span></span><br><span class="line"><span class="function"><span class="params">    ConnectionSpecSelector connectionSpecSelector)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  socket.setSoTimeout(readTimeout);</span><br><span class="line">  Platform.get().connectSocket(socket, route.getSocketAddress(), connectTimeout);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (route.address.getSslSocketFactory() != <span class="keyword">null</span>) &#123;</span><br><span class="line">    connectTls(readTimeout, writeTimeout, connectionSpecSelector);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    protocol = Protocol.HTTP_1_1;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (protocol == Protocol.SPDY_3 || protocol == Protocol.HTTP_2) &#123;</span><br><span class="line">    socket.setSoTimeout(<span class="number">0</span>); <span class="comment">// Framed connection timeouts are set per-stream.</span></span><br><span class="line">    framedConnection = <span class="keyword">new</span> FramedConnection.Builder(route.address.uriHost, <span class="keyword">true</span>, socket)</span><br><span class="line">        .protocol(protocol).build();</span><br><span class="line">    framedConnection.sendConnectionPreface();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    httpConnection = <span class="keyword">new</span> HttpConnection(pool, <span class="keyword">this</span>, socket);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>(1)开启连接。Platform针对不同的平台进行适配，然后连接socket。<br>(2)判断是否存在SslSocketFactory（也可以说是否是htts的地址）。因为http类型只支持HTTP_1_1， https支持http2.0/spdy/http1.1。<br>(3)针对https类型连接Tls。主要的目的是获取服务器支持什么协议。<br>(4)创建连接Connection（HttpConnection/FramedConnection）</p>
+<p>7.Connection.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">connectTls</span><span class="params">(<span class="keyword">int</span> readTimeout, <span class="keyword">int</span> writeTimeout,</span></span></span><br><span class="line"><span class="function"><span class="params">      ConnectionSpecSelector connectionSpecSelector)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (route.requiresTunnel()) &#123;</span><br><span class="line">      createTunnel(readTimeout, writeTimeout);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Address address = route.getAddress();</span><br><span class="line">    SSLSocketFactory sslSocketFactory = address.getSslSocketFactory();</span><br><span class="line">    <span class="keyword">boolean</span> success = <span class="keyword">false</span>;</span><br><span class="line">    SSLSocket sslSocket = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">// Create the wrapper over the connected socket.</span></span><br><span class="line">      sslSocket = (SSLSocket) sslSocketFactory.createSocket(</span><br><span class="line">          socket, address.getUriHost(), address.getUriPort(), <span class="keyword">true</span> <span class="comment">/* autoClose */</span>);</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Configure the socket's ciphers, TLS versions, and extensions.</span></span><br><span class="line">      ConnectionSpec connectionSpec = connectionSpecSelector.configureSecureSocket(sslSocket);</span><br><span class="line">      <span class="keyword">if</span> (connectionSpec.supportsTlsExtensions()) &#123;</span><br><span class="line">        Platform.get().configureTlsExtensions(</span><br><span class="line">            sslSocket, address.getUriHost(), address.getProtocols());</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Force handshake. This can throw!</span></span><br><span class="line">      sslSocket.startHandshake();</span><br><span class="line">      Handshake unverifiedHandshake = Handshake.get(sslSocket.getSession());</span><br><span class="line"></span><br><span class="line">       ...</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Check that the certificate pinner is satisfied by the certificates presented.</span></span><br><span class="line">      address.getCertificatePinner().check(address.getUriHost(),</span><br><span class="line">          unverifiedHandshake.peerCertificates());</span><br><span class="line"></span><br><span class="line">      <span class="comment">// Success! Save the handshake and the ALPN protocol.</span></span><br><span class="line">      String maybeProtocol = connectionSpec.supportsTlsExtensions()</span><br><span class="line">          ? Platform.get().getSelectedProtocol(sslSocket)</span><br><span class="line">          : <span class="keyword">null</span>;</span><br><span class="line">      socket = sslSocket;</span><br><span class="line">      handshake = unverifiedHandshake;</span><br><span class="line">      protocol = maybeProtocol != <span class="keyword">null</span></span><br><span class="line">          ? Protocol.get(maybeProtocol)</span><br><span class="line">          : Protocol.HTTP_1_1;</span><br><span class="line">      success = <span class="keyword">true</span>;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (AssertionError e) &#123;</span><br><span class="line">       ...</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">      ...</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>主要是通过tls握手获取服务器支持的协议和获取sslSocket。  </p>
+<p>###总结  </p>
+<ol>
+<li>sendRequest部分分析完成，分析时候我思考几个问题 ：<br>(1)Connection的连接复用http1.1 keep-alive和http2.0的连接复用有什么区别呢？<br>(2)sendRequest的流程部分怎么没有发送请求和body的代码？  </li>
+</ol>
+<p>2.由上述分析可知：<br>(1)每个请求都会开启一个HttpEngine。<br>(2)每个HttpEngine都会包含一个Connection。(新创建或者连接池中获取)<br>(3)每个HttpEngine在会创建Transport(构造函数包括Connection)。Transport的作为读取数据和发送请求的一个桥梁，下一章中分析它的作用。<br>(4)每个Connection包含一个FrameConnection或者HttpConnection，这两个对象才是真正的操作数据，也在下一章分析。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.fuckcode.xyz/2016/01/11/okhttp%E8%AF%A6%E8%A7%A3(2).html" title="okhttp详解2">http://www.fuckcode.xyz/2016/01/11/okhttp详解(2).html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%BD%91%E7%BB%9C/" rel="tag"># 网络</a>
+              <a href="/tags/okhttp/" rel="tag"># okhttp</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2016/01/10/okhttp%E8%AF%A6%E8%A7%A3(1).html" rel="prev" title="okhttp详解1">
+      <i class="fa fa-chevron-left"></i> okhttp详解1
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2016/01/13/okhttp%E8%AF%A6%E8%A7%A3(4).html" rel="next" title="okhttp详解4">
+      okhttp详解4 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Caij</p>
+  <div class="site-description" itemprop="description">厚积薄发</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID: 'af4bd8203af29949fd4c',
+      clientSecret: '9387549fb655911da2509580f429d1210a078c63',
+      repo: 'Caij.github.io',
+      owner: 'Caij',
+      admin: ['Caij'],
+      id: '8593d62cdea9b26bdbf288882b688726',
+        language: '',
+      distractionFreeMode: 'true'
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

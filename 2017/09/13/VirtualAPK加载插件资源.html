@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/image/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/image/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://www.fuckcode.xyz').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="解决插件资源生效问题，首先需要看看系统创建资源">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VirtualAPK加载插件资源">
+<meta property="og:url" content="http://www.fuckcode.xyz/2017/09/13/VirtualAPK%E5%8A%A0%E8%BD%BD%E6%8F%92%E4%BB%B6%E8%B5%84%E6%BA%90.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="解决插件资源生效问题，首先需要看看系统创建资源">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2017-09-12T16:00:00.000Z">
+<meta property="article:modified_time" content="2019-12-25T08:10:04.000Z">
+<meta property="article:author" content="Caij">
+<meta property="article:tag" content="插件化">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://www.fuckcode.xyz/2017/09/13/VirtualAPK%E5%8A%A0%E8%BD%BD%E6%8F%92%E4%BB%B6%E8%B5%84%E6%BA%90.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>VirtualAPK加载插件资源 | Caij</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">厚积薄发</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="Searching..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2017/09/13/VirtualAPK%E5%8A%A0%E8%BD%BD%E6%8F%92%E4%BB%B6%E8%B5%84%E6%BA%90.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          VirtualAPK加载插件资源
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-09-13 00:00:00" itemprop="dateCreated datePublished" datetime="2017-09-13T00:00:00+08:00">2017-09-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-12-25 16:10:04" itemprop="dateModified" datetime="2019-12-25T16:10:04+08:00">2019-12-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/android/" itemprop="url" rel="index">
+                    <span itemprop="name">android</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>解决插件资源生效问题，首先需要看看系统创建资源</p>
+<a id="more"></a>
+
+<p>1.资源创建流程</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">ContextImpl</span><span class="params">(ContextImpl container, ActivityThread mainThread,</span></span></span><br><span class="line"><span class="function"><span class="params">		LoadedApk packageInfo, ...)</span> </span>&#123;</span><br><span class="line">		<span class="comment">//...</span></span><br><span class="line">		<span class="comment">//省略了部分源码</span></span><br><span class="line">	Resources resources = packageInfo.getResources(mainThread);</span><br><span class="line">	mResources = resources;</span><br><span class="line">	  <span class="comment">//...</span></span><br><span class="line">		<span class="comment">//省略了部分源码</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> Resources <span class="title">getResources</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> mResources;</span><br><span class="line">&#125;</span><br><span class="line">```  </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">继续跟进</span><br><span class="line">```java</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">LoadedApk</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String mResDir;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">LoadedApk</span><span class="params">(ActivityThread activityThread, ApplicationInfo aInfo,</span></span></span><br><span class="line"><span class="function"><span class="params">            CompatibilityInfo compatInfo, ClassLoader baseLoader,</span></span></span><br><span class="line"><span class="function"><span class="params">            <span class="keyword">boolean</span> securityViolation, <span class="keyword">boolean</span> includeCode, <span class="keyword">boolean</span> registerPackage)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> myUid = Process.myUid();</span><br><span class="line">        aInfo = adjustNativeLibraryPaths(aInfo);</span><br><span class="line"></span><br><span class="line">        mActivityThread = activityThread;</span><br><span class="line">        mApplicationInfo = aInfo;</span><br><span class="line">        mPackageName = aInfo.packageName;</span><br><span class="line">        mAppDir = aInfo.sourceDir;</span><br><span class="line">        mResDir = aInfo.uid == myUid ? aInfo.sourceDir : aInfo.publicSourceDir;</span><br><span class="line">        <span class="comment">// 注意一下这个sourceDir，这个是我们宿主的APK包在手机中的路径，宿主的资源通过此地址加载。</span></span><br><span class="line">        <span class="comment">// 该值的生成涉及到PMS,暂时不进行分析。</span></span><br><span class="line">        <span class="comment">// Full path to the base APK for this application.</span></span><br><span class="line">       <span class="comment">//....</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">//....</span></span><br><span class="line">   <span class="function"><span class="keyword">public</span> Resources <span class="title">getResources</span><span class="params">(ActivityThread mainThread)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (mResources == <span class="keyword">null</span>) &#123;</span><br><span class="line">            mResources = mainThread.getTopLevelResources(mResDir, mSplitResDirs, mOverlayDirs,</span><br><span class="line">                    mApplicationInfo.sharedLibraryFiles, Display.DEFAULT_DISPLAY, <span class="keyword">null</span>, <span class="keyword">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> mResources;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">```java</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">ActivityThread</span> </span>&#123;  </span><br><span class="line">  <span class="function">Resources <span class="title">getTopLevelResources</span><span class="params">(String resDir, CompatibilityInfo compInfo)</span> </span>&#123;  </span><br><span class="line">  <span class="comment">//我们暂时只关注下面这一段代码</span></span><br><span class="line"> </span><br><span class="line">       AssetManager assets = <span class="keyword">new</span> AssetManager();  </span><br><span class="line">        <span class="keyword">if</span> (assets.addAssetPath(resDir) == <span class="number">0</span>) &#123;  <span class="comment">//此处将上面的mResDir，也就是宿主的APK在手机中的路径当做资源包添加到AssetManager里，则Resources对象可以通过AssetManager查找资源，此处见(老罗博客：Android应用程序资源的查找过程分析)</span></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;  </span><br><span class="line">        &#125;  </span><br><span class="line">        <span class="comment">// 创建Resources对象，此处依赖AssetManager类来实现资源查找功能。</span></span><br><span class="line">       r = <span class="keyword">new</span> Resources(assets, metrics, getConfiguration(), compInfo);  </span><br><span class="line">  </span><br><span class="line"> &#125;  </span><br><span class="line">&#125;</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line"><span class="number">2</span>. 上面分析完Resources的创建流程，现在继续看如何使加载插件资源</span><br><span class="line">```java</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Resources <span class="title">createResources</span><span class="params">(Context context, File apk)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (Constants.COMBINE_RESOURCES) &#123;</span><br><span class="line">	<span class="comment">//如果插件资源合并到宿主里面去的情况，插件可以访问宿主的资源</span></span><br><span class="line">		Resources resources = <span class="keyword">new</span> ResourcesManager().createResources(context, apk.getAbsolutePath());</span><br><span class="line">		ResourcesManager.hookResources(context, resources);</span><br><span class="line">		<span class="keyword">return</span> resources;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	 <span class="comment">//插件使用独立的Resources，不与宿主有关系，无法访问到宿主的资源</span></span><br><span class="line">		Resources hostResources = context.getResources();</span><br><span class="line">		AssetManager assetManager = createAssetManager(context, apk);</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> Resources(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>（1）如果是独立的资源， 只需要重新创建新的资源，不用管宿主资源<br>（2）如果是插件资源需要使用宿主资源，就需要添加宿主资源和所有的插件资源</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ResourcesManager</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">synchronized</span> Resources <span class="title">createResources</span><span class="params">(Context hostContext, String apk)</span> </span>&#123;</span><br><span class="line">        Resources hostResources = hostContext.getResources();</span><br><span class="line">        Resources newResources = <span class="keyword">null</span>;</span><br><span class="line">        AssetManager assetManager;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.LOLLIPOP) &#123;</span><br><span class="line">                assetManager = AssetManager<span class="class">.<span class="keyword">class</span>.<span class="title">newInstance</span>()</span>;</span><br><span class="line">                ReflectUtil.invoke(AssetManager.class, assetManager, "addAssetPath", hostContext.getApplicationInfo().sourceDir);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                assetManager = hostResources.getAssets();</span><br><span class="line">            &#125;</span><br><span class="line">            ReflectUtil.invoke(AssetManager.class, assetManager, "addAssetPath", apk);</span><br><span class="line">            List&lt;LoadedPlugin&gt; pluginList = PluginManager.getInstance(hostContext).getAllLoadedPlugins();</span><br><span class="line">            <span class="keyword">for</span> (LoadedPlugin plugin : pluginList) &#123;</span><br><span class="line">                ReflectUtil.invoke(AssetManager.class, assetManager, "addAssetPath", plugin.getLocation());</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (isMiUi(hostResources)) &#123;</span><br><span class="line">                newResources = MiUiResourcesCompat.createResources(hostResources, assetManager);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isVivo(hostResources)) &#123;</span><br><span class="line">                newResources = VivoResourcesCompat.createResources(hostContext, hostResources, assetManager);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isNubia(hostResources)) &#123;</span><br><span class="line">                newResources = NubiaResourcesCompat.createResources(hostResources, assetManager);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isNotRawResources(hostResources)) &#123;</span><br><span class="line">                newResources = AdaptationResourcesCompat.createResources(hostResources, assetManager);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// is raw android resources</span></span><br><span class="line">                newResources = <span class="keyword">new</span> Resources(assetManager, hostResources.getDisplayMetrics(), hostResources.getConfiguration());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> newResources;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>（1）这里针对21一下版本和21以上版本做了区分，问题在于21以下版本在addPath之前，AssetManager中的资源路径已经初始化,再次获取的时候将不会改变。<br>（2）这里还有个疑问，针对api21以上，AssetManager使用的同一个引用，为什么需要每次重新添加之前的所有插件资源？像官方提过问题，一直没回复。 </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> ResTable* AssetManager::getResTable(bool required) <span class="keyword">const</span></span><br><span class="line">&#123;</span><br><span class="line">    ResTable* rt = mResources;</span><br><span class="line">    <span class="keyword">if</span> (rt) &#123;</span><br><span class="line">        <span class="keyword">return</span> rt;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Iterate through all asset packages, collecting resources from each.</span></span><br><span class="line"></span><br><span class="line">    <span class="function">AutoMutex <span class="title">_l</span><span class="params">(mLock)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (mResources != NULL) &#123;</span><br><span class="line">        <span class="keyword">return</span> mResources;</span><br><span class="line">    &#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//下面是为null的时候重新全部初始化addPath进来的文件资源</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>mResources指向的是一个ResTable对象，如果它的值不等于NULL，那么就说明当前应用程序已经解析过它使用的资源包里面的resources.arsc文件，因此，这时候AssetManager类的成员函数getResources就可以直接将该ResTable对象返回给调用者。如果还没有初始化 mResources 则按照一定步骤遍历当前应用所使用的每个资源包进而生成 mResources 。  所以在 Android L 之前是需要想办法构造一个新的AssetManager里的 mResources  才行，这里有两种方案，VirtualAPK 用的是类似 InstantRun 的那种方案，构造一个新的AssetManager，将宿主和加载过的插件的所有 apk 全都添加一遍，然后再调用hookResources方法将新的 Resources  替换回原来的，这样会引起两个问题，一个是每次加载新的插件都会重新构造一个 AssetManger 和 Resources，然后重新添加所有资源，这样涉及到很多机型的兼容(因为部分厂商自己修改了 Resources 的类名)，一个是需要有一个替换原来Resources的过程，这样就需要涉及到很多地方，从hookResources的实现里看，替换了四处地方，在尽量少的 hook 原则下这样的情况还是尽量避免的。<br>另外还有一种方案，可以看下<a href="https://www.notion.so/VirtualAPK-1fce1a910c424937acde9528d2acd537" target="_blank" rel="noopener">VirtualAPK 资源篇</a>  </p>
+<p>回到上面createResources， 解决完AssetManager的问题然后创建Resources， 然后针对国产手机做兼容性处理</p>
+<p>3.使资源生效，通俗点就是替换Context中的Resource</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Activity <span class="title">newActivity</span><span class="params">(ClassLoader cl, String className, Intent intent)</span> <span class="keyword">throws</span> InstantiationException, IllegalAccessException, ClassNotFoundException </span>&#123;</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		cl.loadClass(className);</span><br><span class="line">	&#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">		LoadedPlugin plugin = <span class="keyword">this</span>.mPluginManager.getLoadedPlugin(intent);</span><br><span class="line">		String targetClassName = PluginUtil.getTargetActivity(intent);</span><br><span class="line"></span><br><span class="line">		Log.i(TAG, String.format(<span class="string">"newActivity[%s : %s]"</span>, className, targetClassName));</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (targetClassName != <span class="keyword">null</span>) &#123;</span><br><span class="line">			Activity activity = mBase.newActivity(plugin.getClassLoader(), targetClassName, intent);</span><br><span class="line">			activity.setIntent(intent);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				<span class="comment">// for 4.1+</span></span><br><span class="line">				ReflectUtil.setField(ContextThemeWrapper.class, activity, "mResources", plugin.getResources());//注意此处的代码</span><br><span class="line">			&#125; <span class="keyword">catch</span> (Exception ignored) &#123;</span><br><span class="line">				<span class="comment">// ignored.</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">return</span> activity;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> mBase.newActivity(cl, className, intent);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这部分的处理在很多插件框架中都有存在，也就是之前对于21版本以下。这里对资源做了一次赋值的缘由需要探讨一下。<br>跟踪到新建Activity对象的地方，也就是出现问题的地方,这里通过4.4的代码解释一下，后面版本的代码虽然变化大但也会出现问题，追溯到底的原因是一样的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Activity <span class="title">performLaunchActivity</span><span class="params">(ActivityClientRecord r, Intent customIntent)</span> </span>&#123;</span><br><span class="line"><span class="comment">//.....</span></span><br><span class="line">        Activity activity = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            java.lang.ClassLoader cl = r.packageInfo.getClassLoader();</span><br><span class="line">            activity = mInstrumentation.newActivity(</span><br><span class="line">                    cl, component.getClassName(), r.intent);</span><br><span class="line">            StrictMode.incrementExpectedActivityCount(activity.getClass());</span><br><span class="line">            r.intent.setExtrasClassLoader(cl);</span><br><span class="line">            <span class="keyword">if</span> (r.state != <span class="keyword">null</span>) &#123;</span><br><span class="line">                r.state.setClassLoader(cl);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!mInstrumentation.onException(activity, e)) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(</span><br><span class="line">                    <span class="string">"Unable to instantiate activity "</span> + component</span><br><span class="line">                    + <span class="string">": "</span> + e.toString(), e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Application app = r.packageInfo.makeApplication(<span class="keyword">false</span>, mInstrumentation);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (localLOGV) Slog.v(TAG, <span class="string">"Performing launch of "</span> + r);</span><br><span class="line">            <span class="keyword">if</span> (localLOGV) Slog.v(</span><br><span class="line">                    TAG, r + <span class="string">": app="</span> + app</span><br><span class="line">                    + <span class="string">", appName="</span> + app.getPackageName()</span><br><span class="line">                    + <span class="string">", pkg="</span> + r.packageInfo.getPackageName()</span><br><span class="line">                    + <span class="string">", comp="</span> + r.intent.getComponent().toShortString()</span><br><span class="line">                    + <span class="string">", dir="</span> + r.packageInfo.getAppDir());</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (activity != <span class="keyword">null</span>) &#123;</span><br><span class="line">                Context appContext = createBaseContextForActivity(r, activity);<span class="comment">//出现问题的地点</span></span><br><span class="line">                CharSequence title = r.activityInfo.loadLabel(appContext.getPackageManager());</span><br><span class="line">                Configuration config = <span class="keyword">new</span> Configuration(mCompatConfiguration);</span><br><span class="line">                <span class="keyword">if</span> (DEBUG_CONFIGURATION) Slog.v(TAG, <span class="string">"Launching activity "</span></span><br><span class="line">                        + r.activityInfo.name + <span class="string">" with config "</span> + config);</span><br><span class="line">                activity.attach(appContext, <span class="keyword">this</span>, getInstrumentation(), r.token,</span><br><span class="line">                        r.ident, app, r.intent, r.activityInfo, title, r.parent,</span><br><span class="line">                        r.embeddedID, r.lastNonConfigurationInstances, config);</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (customIntent != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    activity.mIntent = customIntent;</span><br><span class="line">                &#125;</span><br><span class="line">                r.lastNonConfigurationInstances = <span class="keyword">null</span>;</span><br><span class="line">                activity.mStartedActivity = <span class="keyword">false</span>;</span><br><span class="line">                <span class="keyword">int</span> theme = r.activityInfo.getThemeResource();</span><br><span class="line">                <span class="keyword">if</span> (theme != <span class="number">0</span>) &#123;</span><br><span class="line">                    activity.setTheme(theme);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                activity.mCalled = <span class="keyword">false</span>;</span><br><span class="line">                mInstrumentation.callActivityOnCreate(activity, r.state);<span class="comment">//此处调用了onCreate方法，如果不进行资源处理则在此出现找不到资源的crash</span></span><br><span class="line">                <span class="keyword">if</span> (!activity.mCalled) &#123;</span><br><span class="line">                    <span class="keyword">throw</span> <span class="keyword">new</span> SuperNotCalledException(</span><br><span class="line">                        <span class="string">"Activity "</span> + r.intent.getComponent().toShortString() +</span><br><span class="line">                        <span class="string">" did not call through to super.onCreate()"</span>);</span><br><span class="line">                &#125;</span><br><span class="line">                r.activity = activity;</span><br><span class="line">                r.stopped = <span class="keyword">true</span>;</span><br><span class="line">                <span class="keyword">if</span> (!r.activity.mFinished) &#123;</span><br><span class="line">                    activity.performStart();</span><br><span class="line">                    r.stopped = <span class="keyword">false</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (!r.activity.mFinished) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (r.state != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        mInstrumentation.callActivityOnRestoreInstanceState(activity, r.state);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (!r.activity.mFinished) &#123;</span><br><span class="line">                    activity.mCalled = <span class="keyword">false</span>;</span><br><span class="line">                    mInstrumentation.callActivityOnPostCreate(activity, r.state);</span><br><span class="line">                    <span class="keyword">if</span> (!activity.mCalled) &#123;</span><br><span class="line">                        <span class="keyword">throw</span> <span class="keyword">new</span> SuperNotCalledException(</span><br><span class="line">                            <span class="string">"Activity "</span> + r.intent.getComponent().toShortString() +</span><br><span class="line">                            <span class="string">" did not call through to super.onPostCreate()"</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            r.paused = <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">            mActivities.put(r.token, r);</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (SuperNotCalledException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!mInstrumentation.onException(activity, e)) &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(</span><br><span class="line">                    <span class="string">"Unable to start activity "</span> + component</span><br><span class="line">                    + <span class="string">": "</span> + e.toString(), e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> activity;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Context <span class="title">createBaseContextForActivity</span><span class="params">(ActivityClientRecord r,</span></span></span><br><span class="line"><span class="function"><span class="params">            <span class="keyword">final</span> Activity activity)</span> </span>&#123;</span><br><span class="line">        ContextImpl appContext = <span class="keyword">new</span> ContextImpl();</span><br><span class="line">        appContext.init(r.packageInfo, r.token, <span class="keyword">this</span>);</span><br><span class="line">        appContext.setOuterContext(activity);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// For debugging purposes, if the activity's package name contains the value of</span></span><br><span class="line">        <span class="comment">// the "debug.use-second-display" system property as a substring, then show</span></span><br><span class="line">        <span class="comment">// its content on a secondary display if there is one.</span></span><br><span class="line">        Context baseContext = appContext;</span><br><span class="line">  </span><br><span class="line">        <span class="keyword">return</span> baseContext;</span><br><span class="line">    &#125;</span><br><span class="line">```  </span><br><span class="line">系统在创建完Activity对象后，紧接着创建Activity所附着的Context，从最上面的创建Resources 一部分内容可知，在createBaseContextForActivity 方法中创建出来的ContextImpl appContext 使用的是宿主的Resources，如果不进行处理紧接着Activity会走入</span><br><span class="line">onCreate的生命周期中，此时插件加载资源的时候还是使用的宿主的资源，而不是我们特意为插件所创建出来的Resources对象，则会发生找不到资源的问题，这里用了一个很机智的方式解决这个问题。  </span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line">```java</span><br><span class="line">    <span class="function"><span class="keyword">public</span> Resources <span class="title">getResources</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (mResources != <span class="keyword">null</span>) &#123;<span class="comment">//我们提前设置了mResources 所以不会走到下面去</span></span><br><span class="line">            <span class="keyword">return</span> mResources;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (mOverrideConfiguration == <span class="keyword">null</span>) &#123;</span><br><span class="line">            mResources = <span class="keyword">super</span>.getResources();</span><br><span class="line">            <span class="keyword">return</span> mResources;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Context resc = createConfigurationContext(mOverrideConfiguration);</span><br><span class="line">            mResources = resc.getResources();</span><br><span class="line">            <span class="keyword">return</span> mResources;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实在于Resource中是通过AssetManager获取资源的，对于Api21以下，每次添加插件资源的时候都会创建一个新的AssetManager，而且保存在一个新的Resource中。在API21以上，AssetManager使用的是同一个引用，在添加插件资源的时候，是往同一个AssetManager中添加，所以并不会有这个问题。</p>
+<p>4.Service中的资源处理<br>LocalService.onStartCommand(Intent intent, int flags, int startId)中(为什么在这里后面分析四大组件的时候会讲)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">	 Application app = plugin.getApplication();</span><br><span class="line">IBinder token = appThread.asBinder();</span><br><span class="line">Method attach = service.getClass().getMethod(<span class="string">"attach"</span>, Context<span class="class">.<span class="keyword">class</span>, <span class="title">ActivityThread</span>.<span class="title">class</span>, <span class="title">String</span>.<span class="title">class</span>, <span class="title">IBinder</span>.<span class="title">class</span>, <span class="title">Application</span>.<span class="title">class</span>, <span class="title">Object</span>.<span class="title">class</span>)</span>;</span><br><span class="line">IActivityManager am = mPluginManager.getActivityManager();</span><br><span class="line"></span><br><span class="line"> IActivityManager am = mPluginManager.getActivityManager();</span><br><span class="line"></span><br><span class="line">   attach.invoke(service, plugin.getPluginContext(), mainThread, component.getClassName(), token, app, am);</span><br></pre></td></tr></table></figure>
+<p>这里将之前创建插件Context放置到Service中，下面继续看看插件Context的创建</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PluginContext</span> <span class="keyword">extends</span> <span class="title">ContextWrapper</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> LoadedPlugin mPlugin;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PluginContext</span><span class="params">(LoadedPlugin plugin)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(plugin.getPluginManager().getHostContext());</span><br><span class="line">        <span class="keyword">this</span>.mPlugin = plugin;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Context <span class="title">getApplicationContext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getApplication();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ApplicationInfo <span class="title">getApplicationInfo</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getApplicationInfo();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Context <span class="title">getHostContext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> getBaseContext();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ContentResolver <span class="title">getContentResolver</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> PluginContentResolver(getHostContext());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ClassLoader <span class="title">getClassLoader</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getClassLoader();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getPackageName</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getPackageName();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getPackageResourcePath</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getPackageResourcePath();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getPackageCodePath</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getCodePath();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> PackageManager <span class="title">getPackageManager</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getPackageManager();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">getSystemService</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// intercept CLIPBOARD_SERVICE,NOTIFICATION_SERVICE</span></span><br><span class="line">        <span class="keyword">if</span> (name.equals(Context.CLIPBOARD_SERVICE)) &#123;</span><br><span class="line">            <span class="keyword">return</span> getHostContext().getSystemService(name);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (name.equals(Context.NOTIFICATION_SERVICE)) &#123;</span><br><span class="line">            <span class="keyword">return</span> getHostContext().getSystemService(name);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.getSystemService(name);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Resources <span class="title">getResources</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getResources();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> AssetManager <span class="title">getAssets</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getAssets();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Resources.<span class="function">Theme <span class="title">getTheme</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.mPlugin.getTheme();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">startActivity</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        ComponentsHandler componentsHandler = mPlugin.getPluginManager().getComponentsHandler();</span><br><span class="line">        componentsHandler.transformIntentToExplicitAsNeeded(intent);</span><br><span class="line">        <span class="keyword">super</span>.startActivity(intent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其实就是创建了一个代理Context， 获取的资源等其他都是从插件Resource中获取。</p>
+<p>5.BroadcastReceiver<br>这一点比较奇怪，BroadcastReceiver中的资源并未替换，那在Api24以下是否存在问题，这个我已经向官方反馈。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">Map&lt;ComponentName, ActivityInfo&gt; receivers = <span class="keyword">new</span> HashMap&lt;ComponentName, ActivityInfo&gt;();</span><br><span class="line"><span class="keyword">for</span> (PackageParser.Activity receiver : <span class="keyword">this</span>.mPackage.receivers) &#123;</span><br><span class="line">    receivers.put(receiver.getComponentName(), receiver.info);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        BroadcastReceiver br = BroadcastReceiver<span class="class">.<span class="keyword">class</span>.<span class="title">cast</span>(<span class="title">getClassLoader</span>().<span class="title">loadClass</span>(<span class="title">receiver</span>.<span class="title">getComponentName</span>().<span class="title">getClassName</span>()).<span class="title">newInstance</span>())</span>;</span><br><span class="line">        <span class="keyword">for</span> (PackageParser.ActivityIntentInfo aii : receiver.intents) &#123;</span><br><span class="line">            <span class="keyword">this</span>.mHostContext.registerReceiver(br, aii);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//改成下面这样 应该就没问题</span></span><br><span class="line"></span><br><span class="line">Map&lt;ComponentName, ActivityInfo&gt; receivers = <span class="keyword">new</span> HashMap&lt;ComponentName, ActivityInfo&gt;();</span><br><span class="line"><span class="keyword">for</span> (PackageParser.Activity receiver : <span class="keyword">this</span>.mPackage.receivers) &#123;</span><br><span class="line">    receivers.put(receiver.getComponentName(), receiver.info);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> BroadcastReceiver br = BroadcastReceiver<span class="class">.<span class="keyword">class</span>.<span class="title">cast</span>(<span class="title">getClassLoader</span>().<span class="title">loadClass</span>(<span class="title">receiver</span>.<span class="title">getComponentName</span>().<span class="title">getClassName</span>()).<span class="title">newInstance</span>())</span>;</span><br><span class="line">        BroadcastReceiver broadcastReceiver = <span class="keyword">new</span> BroadcastReceiver() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onReceive</span><span class="params">(Context context, Intent intent)</span> </span>&#123;</span><br><span class="line">                br.onReceive(getPluginContext(), intent);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">        <span class="keyword">for</span> (PackageParser.ActivityIntentInfo aii : receiver.intents) &#123;</span><br><span class="line">            <span class="keyword">this</span>.mHostContext.registerReceiver(broadcastReceiver, aii);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.fuckcode.xyz/2017/09/13/VirtualAPK%E5%8A%A0%E8%BD%BD%E6%8F%92%E4%BB%B6%E8%B5%84%E6%BA%90.html" title="VirtualAPK加载插件资源">http://www.fuckcode.xyz/2017/09/13/VirtualAPK加载插件资源.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%8F%92%E4%BB%B6%E5%8C%96/" rel="tag"># 插件化</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2017/09/12/VirtualAPK%E4%BB%8B%E7%BB%8D%E5%92%8C%E5%AD%A6%E4%B9%A0%E8%AE%A1%E5%88%92.html" rel="prev" title="VirtualAPK插件化简介和学习计划">
+      <i class="fa fa-chevron-left"></i> VirtualAPK插件化简介和学习计划
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/04/25/LeakCanary%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90.html" rel="next" title="LeakCanary源码解析">
+      LeakCanary源码解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Caij</p>
+  <div class="site-description" itemprop="description">厚积薄发</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID: 'af4bd8203af29949fd4c',
+      clientSecret: '9387549fb655911da2509580f429d1210a078c63',
+      repo: 'Caij.github.io',
+      owner: 'Caij',
+      admin: ['Caij'],
+      id: 'dc99f168a150e0a54d2a6ca8e436bf56',
+        language: '',
+      distractionFreeMode: 'true'
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

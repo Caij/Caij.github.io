@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/image/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/image/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://www.fuckcode.xyz').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="1.判断对象是否存活1.1引用计数法给对象中添加一个引用计数器，每当有一个地方引用它时，计数器值加2；当引用失效时，计数器值减1。但是这种计算方法很难解决对象互相循环引用的问题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM内存回收">
+<meta property="og:url" content="http://www.fuckcode.xyz/2015/10/15/JVM%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="1.判断对象是否存活1.1引用计数法给对象中添加一个引用计数器，每当有一个地方引用它时，计数器值加2；当引用失效时，计数器值减1。但是这种计算方法很难解决对象互相循环引用的问题。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/jvm/clear_mark_sweep.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/jvm/clear_copy.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/jvm/clear_mark_compact.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/jvm/gc_support.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/jvm/serial_clear.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/jvm/cms_clear.png">
+<meta property="article:published_time" content="2015-10-14T16:00:00.000Z">
+<meta property="article:modified_time" content="2016-08-03T03:36:04.000Z">
+<meta property="article:author" content="Caij">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="内存">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://www.fuckcode.xyz/image/jvm/clear_mark_sweep.png">
+
+<link rel="canonical" href="http://www.fuckcode.xyz/2015/10/15/JVM%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>JVM内存回收 | Caij</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">厚积薄发</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="Searching..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2015/10/15/JVM%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JVM内存回收
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2015-10-15 00:00:00" itemprop="dateCreated datePublished" datetime="2015-10-15T00:00:00+08:00">2015-10-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2016-08-03 11:36:04" itemprop="dateModified" datetime="2016-08-03T11:36:04+08:00">2016-08-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JVM/" itemprop="url" rel="index">
+                    <span itemprop="name">JVM</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="1-判断对象是否存活"><a href="#1-判断对象是否存活" class="headerlink" title="1.判断对象是否存活"></a>1.判断对象是否存活</h3><p>1.1引用计数法<br>给对象中添加一个引用计数器，每当有一个地方引用它时，计数器值加2；当引用失效时，计数器值减1。但是这种计算方法很难解决对象互相循环引用的问题。</p>
+<a id="more"></a>
+
+<p>1.2 根搜索算法<br>通过一系列的GC Roots对象作为起始点，通过这个节点向下搜索，如果一个对象没有一条从GC Roots到该对象的路径，则不可达，即可被回收。 </p>
+<p>1.3 引用<br>强引用：永远不会被回收的引用对象 Object o = new Object()<br>软引用：在OOM之前会把这些对象作为垃圾对象进行回收，如果还没有足够的内存，则OOM，通过SoftReference类来实现<br>弱引用： 存活到下一次垃圾收集发生之前WeakReference实现<br>虚引用：最弱的，唯一目的是在对象被回收时收到一个系统通知。 PlantomReference实现。  </p>
+<p>当一个对象要被回收时需要进行两次标记，经历两次标记后的对象才会被回收，第一次就是GC roots不可达的的，第二次是调用finalize()后还没被拯救的。</p>
+<h3 id="2-垃圾收集算法"><a href="#2-垃圾收集算法" class="headerlink" title="2. 垃圾收集算法"></a>2. 垃圾收集算法</h3><h4 id="2-1-标记-清除"><a href="#2-1-标记-清除" class="headerlink" title="2.1 标记-清除"></a>2.1 标记-清除</h4><p>标记—清除算法是最基础的收集算法，它分为“标记”和“清除”两个阶段：首先标记出所需回收的对象，在标记完成后统一回收掉所有被标记的对象，它的标记过程其实就是前面的根搜索算法中判定垃圾对象的标记过程。标记—清除算法的执行情况如下图所示：<br><img src="/image/jvm/clear_mark_sweep.png" alt="图片加载流程图">  </p>
+<p>该算法有如下缺点：<br>标记和清除过程的效率都不高。<br>标记清除后会产生大量不连续的内存碎片，空间碎片太多可能会导致，当程序在以后的运行过程中需要分配较大对象时无法找到足够的连续内存而不得不触发另一次垃圾收集动作。  </p>
+<h4 id="2-2-复制算法"><a href="#2-2-复制算法" class="headerlink" title="2.2 复制算法"></a>2.2 复制算法</h4><p>它将内存按容量分为大小相等的两块，每次只使用其中的一块，当这一块的内存用完了，就将还存活着的对象复制到另外一块内存上面，然后再把已使用过的内存空间一次清理掉。复制算法有如下优点：<br>每次只对一块内存进行回收，运行高效。<br>只需移动栈顶指针，按顺序分配内存即可，实现简单。<br>内存回收时不用考虑内存碎片的出现。<br>它的缺点是：可一次性分配的最大内存缩小了一半。<br>对新生代的回收采用此方法，一般不是采用1：1的比例，而是将其化为y一个 Eden和2个Survivor区，Eden：Survivor为8：1 ，每次只使用Eden区和1个Survivor，将活着的放到剩下的Survivor区中。<br>复制算法的执行情况如下图所示：<br><img src="/image/jvm/clear_copy.png" alt="图片加载流程图">   </p>
+<h4 id="2-3-标记-整理"><a href="#2-3-标记-整理" class="headerlink" title="2.3 标记-整理"></a>2.3 标记-整理</h4><p>复制算法比较适合于新生代，在老年代中，对象存活率比较高，如果执行较多的复制操作，效率将会变低，所以老年代一般会选用其他算法，如标记—整理算法。该算法标记的过程与标记—清除算法中的标记过程一样，但对标记后出的垃圾对象的处理情况有所不同，它不是直接对可回收对象进行清理，而是让所有的对象都向一端移动，然后直接清理掉端边界以外的内存。<br>标记—整理算法的回收情况如下所示：<br><img src="/image/jvm/clear_mark_compact.png" alt="图片加载流程图">  </p>
+<h4 id="2-4-分代收集"><a href="#2-4-分代收集" class="headerlink" title="2.4 分代收集"></a>2.4 分代收集</h4><p>当前商业虚拟机的垃圾收集 都采用分代收集，它根据对象的存活周期的不同将内存划分为几块，一般是把Java堆分为新生代和老年代。在新生代中，每次垃圾收集时都会发现有大量对象死去，只有少量存活，因此可选用复制算法来完成收集，而老年代中因为对象存活率高、没有额外空间对它进行分配担保，就必须使用标记—清除算法或标记—整理算法来进行回收。  </p>
+<h3 id="3-垃圾回收器"><a href="#3-垃圾回收器" class="headerlink" title="3 垃圾回收器"></a>3 垃圾回收器</h3><p>在java虚拟机中，没有最好的垃圾收集器，只有适合的垃圾收集，所以垃圾收集通过多种垃圾收集器合作完成。<br><img src="/image/jvm/gc_support.png" alt="图片加载流程图"></p>
+<h4 id="3-1-Serial收集器"><a href="#3-1-Serial收集器" class="headerlink" title="3.1 Serial收集器"></a>3.1 Serial收集器</h4><p>新生代垃圾收集器，单一线程，垃圾收集时Stop The World，复制算法。  </p>
+<h4 id="3-2-Serial-Old收集器"><a href="#3-2-Serial-Old收集器" class="headerlink" title="3.2 Serial Old收集器"></a>3.2 Serial Old收集器</h4><p>老年代垃圾收集器，单一线程，垃圾收集时Stop The World，标记整体算法。  </p>
+<p>两种Serial收集器工作流程图：<br><img src="/image/jvm/serial_clear.png" alt="图片加载流程图">   </p>
+<h4 id="3-3-ParNew收集器"><a href="#3-3-ParNew收集器" class="headerlink" title="3.3 ParNew收集器"></a>3.3 ParNew收集器</h4><p>新生代垃圾收集器，多线程，垃圾收集时Stop The World，复制算法。</p>
+<h4 id="3-3-ParNew-Old收集器"><a href="#3-3-ParNew-Old收集器" class="headerlink" title="3.3 ParNew Old收集器"></a>3.3 ParNew Old收集器</h4><p>老年代垃圾收集器，多线程，垃圾收集时Stop The World，标记整体算法。  </p>
+<h4 id="3-4-Parallel-Scanvenge-收集器"><a href="#3-4-Parallel-Scanvenge-收集器" class="headerlink" title="3.4 Parallel Scanvenge 收集器"></a>3.4 Parallel Scanvenge 收集器</h4><p>新生代收集器，复制算法，多线程执行，垃圾收集时Stop The World，关注吞吐量（用户代码时间/虚拟机运行总时间）。<br>高吞吐量可以高效的利用Cpu时间，尽快的完成程序的运算任务，适合在后台运算而不需要太多交互的任务。 </p>
+<h4 id="3-5-CMS收集算法"><a href="#3-5-CMS收集算法" class="headerlink" title="3.5 CMS收集算法"></a>3.5 CMS收集算法</h4><p>老年代收集器，标记-清除算法，关注最短收集停顿时间。<br>分为四个步骤：初始标记，并发标记，重新标记，并发清除。<br>初始标记、重新标记两个步骤Stop The World，其余步骤都是可以和用户线程并发进行。<br><img src="/image/jvm/cms_clear.png" alt="图片加载流程图">    </p>
+<p>缺点：<br>对CPU资源敏感。<br>无法处理浮动垃圾。<br>产生空间碎片。  </p>
+<h4 id="3-6-G1收集器"><a href="#3-6-G1收集器" class="headerlink" title="3.6 G1收集器"></a>3.6 G1收集器</h4><p>标记整理算法，精确的控制停顿时间。G1强整个Java堆划分为多个固定的独立却与，并且跟踪这些区域里面的垃圾堆积程度，在后台维护一个优先列表，每次根据允许的收集时间，优先回收垃圾最多的区域。  </p>
+<h3 id="4-内存分配和回收策略"><a href="#4-内存分配和回收策略" class="headerlink" title="4. 内存分配和回收策略"></a>4. 内存分配和回收策略</h3><h4 id="4-1对象优先分配在Eden"><a href="#4-1对象优先分配在Eden" class="headerlink" title="4.1对象优先分配在Eden"></a>4.1对象优先分配在Eden</h4><p>大多数情况下，对象在新生代Eden区中分配，当Eden区没有足够的空间进行分配吗虚拟机则发起一次young gc。  </p>
+<h4 id="4-2-大对象直接进入老年代"><a href="#4-2-大对象直接进入老年代" class="headerlink" title="4.2 大对象直接进入老年代"></a>4.2 大对象直接进入老年代</h4><p>需要大量连续的内存空间的Java对象，比如长字符串和数组。目的是避免在Eden区和两个Survivor区之间发生大量的内存拷贝。</p>
+<h4 id="4-3-长期存活的对象进入老年代"><a href="#4-3-长期存活的对象进入老年代" class="headerlink" title="4.3 长期存活的对象进入老年代"></a>4.3 长期存活的对象进入老年代</h4><p>每一个对象都有一个对象年龄计数器。如果对象在Eden出生并经过第一次young gc后仍然存活，并且能被Survivor容纳，将被移动到Survivor区，并将对象年龄设为1。对象在Survivor区没熬过一次young gc年龄增加一岁，当年龄增加到一定的程度将会移动到老年代中。</p>
+<h4 id="4-4-动态对象年龄判断"><a href="#4-4-动态对象年龄判断" class="headerlink" title="4.4 动态对象年龄判断"></a>4.4 动态对象年龄判断</h4><p>如果在Survivor空间中相同年龄所有对象大小总和大于Survivor空间的一半，年龄大于或等于该年龄的所有对象就可以直接进入老年代。  </p>
+<h4 id="4-5-空间分配担保"><a href="#4-5-空间分配担保" class="headerlink" title="4.5 空间分配担保"></a>4.5 空间分配担保</h4><p> 在发生Minor GC之前，虚拟机会先检查老年代最大可用的连续空间是否大于新生代所有对象总空间，如果这个条件成立，那么Minor GC可以确保是安全的。如果不成立，则虚拟机会查看HandlePromotionFailure设置值是否允许担保失败。如果允许，那么会继续检查老年代最大可用的连续空间是否大于历次晋升到老年代对象的平均大小，如果大于，将尝试着进行一次Minor GC，尽管这次Minor GC是有风险的；如果小于，或者HandlePromotionFailure设置不允许冒险，那这时也要改为进行一次Full GC。<br>新生代使用复制收集算法，但为了内存利用率，只使用其中一个Survivor空间来作为轮换备份，因此当出现大量对象在Minor GC后仍然存活的情况（最极端的情况就是内存回收后新生代中所有对象都存活），就需要老年代进行分配担保，把Survivor无法容纳的对象直接进入老年代。与生活中的贷款担保类似，老年代要进行这样的担保，前提是老年代本身还有容纳这些对象的剩余空间，一共有多少对象会活下来在实际完成内存回收之前是无法明确知道的，所以只好取之前每一次回收晋升到老年代对象容量的平均大小值作为经验值，与老年代的剩余空间进行比较，决定是否进行Full GC来让老年代腾出更多空间。<br>取平均值进行比较其实仍然是一种动态概率的手段，也就是说，如果某次Minor GC存活后的对象突增，远远高于平均值的话，依然会导致担保失败（Handle Promotion Failure）。如果出现了HandlePromotionFailure失败，那就只好在失败后重新发起一次Full GC。虽然担保失败时绕的圈子是最大的，但大部分情况下都还是会将HandlePromotionFailure开关打开，避免Full GC过于频繁。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.fuckcode.xyz/2015/10/15/JVM%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6.html" title="JVM内存回收">http://www.fuckcode.xyz/2015/10/15/JVM内存回收.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JVM/" rel="tag"># JVM</a>
+              <a href="/tags/%E5%86%85%E5%AD%98/" rel="tag"># 内存</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/10/14/JVM%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B.html" rel="prev" title="JVM内存模型">
+      <i class="fa fa-chevron-left"></i> JVM内存模型
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/10/16/%E5%9B%BE%E7%89%87%E4%B8%A4%E7%BA%A7%E7%BC%93%E5%AD%98%E8%A7%A3%E6%9E%90.html" rel="next" title="图片两级缓存解析">
+      图片两级缓存解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-判断对象是否存活"><span class="nav-number">1.</span> <span class="nav-text">1.判断对象是否存活</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-垃圾收集算法"><span class="nav-number">2.</span> <span class="nav-text">2. 垃圾收集算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-标记-清除"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 标记-清除</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-复制算法"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 复制算法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-标记-整理"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 标记-整理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-分代收集"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 分代收集</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-垃圾回收器"><span class="nav-number">3.</span> <span class="nav-text">3 垃圾回收器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-Serial收集器"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 Serial收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-Serial-Old收集器"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 Serial Old收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-ParNew收集器"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 ParNew收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-ParNew-Old收集器"><span class="nav-number">3.4.</span> <span class="nav-text">3.3 ParNew Old收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-4-Parallel-Scanvenge-收集器"><span class="nav-number">3.5.</span> <span class="nav-text">3.4 Parallel Scanvenge 收集器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-5-CMS收集算法"><span class="nav-number">3.6.</span> <span class="nav-text">3.5 CMS收集算法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-6-G1收集器"><span class="nav-number">3.7.</span> <span class="nav-text">3.6 G1收集器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-内存分配和回收策略"><span class="nav-number">4.</span> <span class="nav-text">4. 内存分配和回收策略</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1对象优先分配在Eden"><span class="nav-number">4.1.</span> <span class="nav-text">4.1对象优先分配在Eden</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-大对象直接进入老年代"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 大对象直接进入老年代</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-长期存活的对象进入老年代"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 长期存活的对象进入老年代</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-4-动态对象年龄判断"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 动态对象年龄判断</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-5-空间分配担保"><span class="nav-number">4.5.</span> <span class="nav-text">4.5 空间分配担保</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Caij</p>
+  <div class="site-description" itemprop="description">厚积薄发</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID: 'af4bd8203af29949fd4c',
+      clientSecret: '9387549fb655911da2509580f429d1210a078c63',
+      repo: 'Caij.github.io',
+      owner: 'Caij',
+      admin: ['Caij'],
+      id: 'e9256ae6ae01ab83dbd2d1ecdaf6b0a4',
+        language: '',
+      distractionFreeMode: 'true'
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

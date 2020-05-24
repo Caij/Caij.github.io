@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/image/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/image/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://www.fuckcode.xyz').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="1 介绍Handler在Android中起到至关重要的作用，系统本就是通过Handler的消息来驱动的，另外一个就是在Android系统中，只有主线程才能修改UI，而且存在ANR机制，所以耗时操作需要在子线程中运行，保证程序的流畅性，因此子线程中获取的数据传递给主线程更新UI，而线程通讯就是通过Handler来处理的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Handler 源码解析">
+<meta property="og:url" content="http://www.fuckcode.xyz/2014/12/26/Handler%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="1 介绍Handler在Android中起到至关重要的作用，系统本就是通过Handler的消息来驱动的，另外一个就是在Android系统中，只有主线程才能修改UI，而且存在ANR机制，所以耗时操作需要在子线程中运行，保证程序的流畅性，因此子线程中获取的数据传递给主线程更新UI，而线程通讯就是通过Handler来处理的。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://www.fuckcode.xyz/images/handler/HandlerUML.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/images/handler/HandlerSqu.png">
+<meta property="article:published_time" content="2014-12-25T16:00:00.000Z">
+<meta property="article:modified_time" content="2018-04-21T11:34:26.000Z">
+<meta property="article:author" content="Caij">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://www.fuckcode.xyz/images/handler/HandlerUML.png">
+
+<link rel="canonical" href="http://www.fuckcode.xyz/2014/12/26/Handler%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Handler 源码解析 | Caij</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">厚积薄发</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="Searching..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2014/12/26/Handler%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Handler 源码解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2014-12-26 00:00:00" itemprop="dateCreated datePublished" datetime="2014-12-26T00:00:00+08:00">2014-12-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2018-04-21 19:34:26" itemprop="dateModified" datetime="2018-04-21T19:34:26+08:00">2018-04-21</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1 介绍"></a>1 介绍</h2><p>Handler在Android中起到至关重要的作用，系统本就是通过Handler的消息来驱动的，另外一个就是在Android系统中，只有主线程才能修改UI，而且存在ANR机制，所以耗时操作需要在子线程中运行，保证程序的流畅性，因此子线程中获取的数据传递给主线程更新UI，而线程通讯就是通过Handler来处理的。  </p>
+<a id="more"></a>  
+<h2 id="2-类介绍"><a href="#2-类介绍" class="headerlink" title="2 类介绍"></a>2 类介绍</h2><p>2.1 Handler 负责发送消息和接受消息。构造函数包含Looper，从Looper中获取消息队列，发送消息是将消息放入到消息队列中。<br>2.2 Looper 负责初始化消息队列和开启队列租塞读取。  </p>
+<h2 id="3-类图和流程图"><a href="#3-类图和流程图" class="headerlink" title="3 类图和流程图"></a>3 类图和流程图</h2><p>3.1 类图<br><img src="/images/handler/HandlerUML.png" alt="类图">  </p>
+<p>3.2 流程图<br><img src="/images/handler/HandlerSqu.png" alt="流程图"> </p>
+<h2 id="4-源码"><a href="#4-源码" class="headerlink" title="4 源码"></a>4 源码</h2><p>4.1 Looper.prepare()</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> ThreadLocal&lt;Looper&gt; sThreadLocal = <span class="keyword">new</span> ThreadLocal&lt;Looper&gt;();  </span><br><span class="line"></span><br><span class="line"> <span class="comment">/**  </span></span><br><span class="line"><span class="comment">  * 给当前线程设置一个局部变量Looper。每个线程只能设置一个Looper </span></span><br><span class="line"><span class="comment">  */</span>  </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">prepare</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">    <span class="keyword">if</span> (sThreadLocal.get() != <span class="keyword">null</span>) &#123;  </span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"Only one Looper may be created per thread"</span>);  </span><br><span class="line">    &#125;  </span><br><span class="line">    sThreadLocal.set(<span class="keyword">new</span> Looper());  </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">Looper</span><span class="params">(<span class="keyword">boolean</span> quitAllowed)</span> </span>&#123;</span><br><span class="line">    mQueue = <span class="keyword">new</span> MessageQueue(quitAllowed);</span><br><span class="line">    mThread = Thread.currentThread();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要是创建一个Looper，然后设置到线程局部变量中（ThreadLocal详细可自己了解），所以每个线程对应一个Looper，而Looper里面包含一个消息队列，再次初始化会异常。  </p>
+<p>4.2 Handler()</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Handler</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (FIND_POTENTIAL_LEAKS) &#123;</span><br><span class="line">        <span class="keyword">final</span> Class&lt;? extends Handler&gt; klass = getClass();</span><br><span class="line">        <span class="keyword">if</span> ((klass.isAnonymousClass() || klass.isMemberClass() || klass.isLocalClass()) &amp;&amp;</span><br><span class="line">                (klass.getModifiers() &amp; Modifier.STATIC) == <span class="number">0</span>) &#123;</span><br><span class="line">            Log.w(TAG, <span class="string">"The following Handler class should be static or leaks might occur: "</span> +</span><br><span class="line">                klass.getCanonicalName());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    mLooper = Looper.myLooper();</span><br><span class="line">    <span class="keyword">if</span> (mLooper == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(</span><br><span class="line">            <span class="string">"Can't create handler inside thread that has not called Looper.prepare()"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    mQueue = mLooper.mQueue;</span><br><span class="line">    mCallback = <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Handler</span><span class="params">(Looper looper)</span> </span>&#123;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要包含两个构造参数，如果不传Looper就会使用Looper.myLooper()通过线程局部变量获取当前线程的Looper对象，如果传递Looper，就直接使用传递进来的Looper对象。Handler最终执行方法所在的线程取决于使用哪个线程的Looper。</p>
+<p>4.3 Looper.loop() </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">loop</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">    Looper me = myLooper();  </span><br><span class="line">    <span class="keyword">if</span> (me == <span class="keyword">null</span>) &#123;  </span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"No Looper; Looper.prepare() wasn't called on this thread."</span>);  </span><br><span class="line">    &#125;  </span><br><span class="line">    MessageQueue queue = me.mQueue;  </span><br><span class="line">      </span><br><span class="line">    <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;  </span><br><span class="line">        Message msg = queue.next(); <span class="comment">// might block   这里阻塞等待消息。</span></span><br><span class="line">        <span class="keyword">if</span> (msg != <span class="keyword">null</span>) &#123;  </span><br><span class="line">            <span class="keyword">if</span> (msg.target == <span class="keyword">null</span>) &#123;  </span><br><span class="line">                <span class="comment">// No target is a magic identifier for the quit message.  </span></span><br><span class="line">                <span class="keyword">return</span>;  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            <span class="keyword">long</span> wallStart = <span class="number">0</span>;  </span><br><span class="line">            <span class="keyword">long</span> threadStart = <span class="number">0</span>;  </span><br><span class="line"></span><br><span class="line">            <span class="comment">// This must be in a local variable, in case a UI event sets the logger  </span></span><br><span class="line">            Printer logging = me.mLogging;  </span><br><span class="line">            <span class="keyword">if</span> (logging != <span class="keyword">null</span>) &#123;  </span><br><span class="line">                logging.println(<span class="string">"&gt;&gt;&gt;&gt;&gt; Dispatching to "</span> + msg.target + <span class="string">" "</span> +  </span><br><span class="line">                        msg.callback + <span class="string">": "</span> + msg.what);  </span><br><span class="line">                wallStart = SystemClock.currentTimeMicro();  </span><br><span class="line">                threadStart = SystemClock.currentThreadTimeMicro();  </span><br><span class="line">            &#125;  </span><br><span class="line"></span><br><span class="line">            msg.target.dispatchMessage(msg);  </span><br><span class="line">              </span><br><span class="line">            msg.recycle();<span class="comment">//这里回收消息， 实例化Message使用Message.obtain()获取回收对象。  </span></span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>开启循环阻塞获取消息并分发，执行msg.target.dispatchMessage(msg)，这里的msg.targer就是Handler。</p>
+<p>4.4 Handler.sendMessage</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">sendMessageAtTime</span><span class="params">(Message msg, <span class="keyword">long</span> uptimeMillis)</span>  </span></span><br><span class="line"><span class="function"></span>&#123;    </span><br><span class="line">	MessageQueue queue = mQueue;  <span class="comment">//这里的消息队列就是当前线程的消息队列，是从Looper中获取的。</span></span><br><span class="line">	<span class="keyword">if</span> (queue != <span class="keyword">null</span>) &#123;  </span><br><span class="line">	    msg.target = <span class="keyword">this</span>;  <span class="comment">//msg.target 就是handler自己  </span></span><br><span class="line">	    sent = queue.enqueueMessage(msg, uptimeMillis);  </span><br><span class="line">	&#125;  </span><br><span class="line">	<span class="keyword">return</span> sent;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>就是将消息放入到消息队列中。</p>
+<p>4.5 MessageQueue.enqueueMessage()</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">enqueueMessage</span><span class="params">(Message msg, <span class="keyword">long</span> when)</span> </span>&#123;  </span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">boolean</span> needWake;  </span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;  </span><br><span class="line">        msg.when = when;  </span><br><span class="line">        <span class="comment">//Log.d("MessageQueue", "Enqueing: " + msg);  </span></span><br><span class="line">        Message p = mMessages;  </span><br><span class="line">        <span class="keyword">if</span> (p == <span class="keyword">null</span> || when == <span class="number">0</span> || when &lt; p.when) &#123;  </span><br><span class="line">            msg.next = p;  </span><br><span class="line">            mMessages = msg;  </span><br><span class="line">            needWake = mBlocked; <span class="comment">// new head, might need to wake up  </span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;  </span><br><span class="line">            Message prev = <span class="keyword">null</span>;  </span><br><span class="line">            <span class="keyword">while</span> (p != <span class="keyword">null</span> &amp;&amp; p.when &lt;= when) &#123;  </span><br><span class="line">                prev = p;  </span><br><span class="line">                p = p.next;  </span><br><span class="line">            &#125;  </span><br><span class="line">            msg.next = prev.next;  </span><br><span class="line">            prev.next = msg;  </span><br><span class="line">            needWake = <span class="keyword">false</span>; <span class="comment">// still waiting on head, no need to wake up  </span></span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">if</span> (needWake) &#123;  </span><br><span class="line">        nativeWake(mPtr);  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里存储的方式是链表形式，主要是针对消息的执行时间排序。</p>
+<h2 id="5-思考"><a href="#5-思考" class="headerlink" title="5 思考"></a>5 思考</h2><p>为什么平时开发在主线程中没有调用Looper.prepare和Looper.loop也能直接使用Handler？<br>可以看看ActivityThread中进程初始化的操作中已经在主线程中操作过这些。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;  </span><br><span class="line">  </span><br><span class="line">        Looper.prepareMainLooper();  <span class="comment">//这里执行的prepare  </span></span><br><span class="line">        <span class="keyword">if</span> (sMainThreadHandler == <span class="keyword">null</span>) &#123;  </span><br><span class="line">            sMainThreadHandler = <span class="keyword">new</span> Handler();  </span><br><span class="line">        &#125;  </span><br><span class="line">  </span><br><span class="line">        ActivityThread thread = <span class="keyword">new</span> ActivityThread();  </span><br><span class="line">        thread.attach(<span class="keyword">false</span>);  </span><br><span class="line">  </span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">false</span>) &#123;  </span><br><span class="line">            Looper.myLooper().setMessageLogging(<span class="keyword">new</span>  </span><br><span class="line">                    LogPrinter(Log.DEBUG, <span class="string">"ActivityThread"</span>));  </span><br><span class="line">        &#125;  </span><br><span class="line">  </span><br><span class="line">        Looper.loop(); <span class="comment">//这里loop  </span></span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.fuckcode.xyz/2014/12/26/Handler%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90.html" title="Handler 源码解析">http://www.fuckcode.xyz/2014/12/26/Handler源码解析.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2015/01/03/proxy.html" rel="next" title="Java 动态代理">
+      Java 动态代理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-介绍"><span class="nav-number">1.</span> <span class="nav-text">1 介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-类介绍"><span class="nav-number">2.</span> <span class="nav-text">2 类介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-类图和流程图"><span class="nav-number">3.</span> <span class="nav-text">3 类图和流程图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-源码"><span class="nav-number">4.</span> <span class="nav-text">4 源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-思考"><span class="nav-number">5.</span> <span class="nav-text">5 思考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Caij</p>
+  <div class="site-description" itemprop="description">厚积薄发</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID: 'af4bd8203af29949fd4c',
+      clientSecret: '9387549fb655911da2509580f429d1210a078c63',
+      repo: 'Caij.github.io',
+      owner: 'Caij',
+      admin: ['Caij'],
+      id: '9ac4f4e2e0fd5d5f93cbcc1d8a58a295',
+        language: '',
+      distractionFreeMode: 'true'
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

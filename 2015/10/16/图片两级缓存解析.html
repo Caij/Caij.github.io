@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/image/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/image/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://www.fuckcode.xyz').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="图片加载是客户端开发中重要的一个模块，如今也有很多优秀的开源库(UIL、Picasso、Glide、Fresco)。大部分图片库都采用了Memory缓存和Disk缓存。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="图片两级缓存解析">
+<meta property="og:url" content="http://www.fuckcode.xyz/2015/10/16/%E5%9B%BE%E7%89%87%E4%B8%A4%E7%BA%A7%E7%BC%93%E5%AD%98%E8%A7%A3%E6%9E%90.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="图片加载是客户端开发中重要的一个模块，如今也有很多优秀的开源库(UIL、Picasso、Glide、Fresco)。大部分图片库都采用了Memory缓存和Disk缓存。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/image_cache/cache_init.png">
+<meta property="article:published_time" content="2015-10-15T16:00:00.000Z">
+<meta property="article:modified_time" content="2016-08-03T03:36:04.000Z">
+<meta property="article:author" content="Caij">
+<meta property="article:tag" content="android">
+<meta property="article:tag" content="图片缓存">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://www.fuckcode.xyz/image/image_cache/cache_init.png">
+
+<link rel="canonical" href="http://www.fuckcode.xyz/2015/10/16/%E5%9B%BE%E7%89%87%E4%B8%A4%E7%BA%A7%E7%BC%93%E5%AD%98%E8%A7%A3%E6%9E%90.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>图片两级缓存解析 | Caij</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">厚积薄发</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="Searching..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2015/10/16/%E5%9B%BE%E7%89%87%E4%B8%A4%E7%BA%A7%E7%BC%93%E5%AD%98%E8%A7%A3%E6%9E%90.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          图片两级缓存解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2015-10-16 00:00:00" itemprop="dateCreated datePublished" datetime="2015-10-16T00:00:00+08:00">2015-10-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2016-08-03 11:36:04" itemprop="dateModified" datetime="2016-08-03T11:36:04+08:00">2016-08-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%9B%BE%E7%89%87%E5%8A%A0%E8%BD%BD/" itemprop="url" rel="index">
+                    <span itemprop="name">图片加载</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>图片加载是客户端开发中重要的一个模块，如今也有很多优秀的开源库(<a href="https://github.com/nostra13/Android-Universal-Image-Loader" target="_blank" rel="noopener">UIL</a>、<a href="https://github.com/square/picasso" target="_blank" rel="noopener">Picasso</a>、<a href="https://github.com/bumptech/glide" target="_blank" rel="noopener">Glide</a>、<a href="https://github.com/facebook/fresco" target="_blank" rel="noopener">Fresco</a>)。大部分图片库都采用了Memory缓存和Disk缓存。  </p>
+<a id="more"></a>  
+
+<h3 id="1-Memory缓存（LruCache）"><a href="#1-Memory缓存（LruCache）" class="headerlink" title="1. Memory缓存（LruCache）"></a>1. Memory缓存（LruCache）</h3><p>最直接的方法就是看源码</p>
+<h4 id="1-1-成员变量"><a href="#1-1-成员变量" class="headerlink" title="1.1 成员变量"></a>1.1 成员变量</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> <span class="keyword">private</span> <span class="keyword">final</span> LinkedHashMap&lt;K, V&gt; map;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** Size of this cache in units. Not necessarily the number of elements. */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> size;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> maxSize;</span><br></pre></td></tr></table></figure>
+<p>map用于存放缓存的Bitmap<br>size当前缓存的总大小<br>maxSize是缓存允许的最大大小，由构造函数赋值。  </p>
+<h4 id="1-2-重要方法"><a href="#1-2-重要方法" class="headerlink" title="1.2 重要方法"></a>1.2 重要方法</h4><p>1.2.1 添加数据</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> V <span class="title">put</span><span class="params">(K key, V value)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	V previous;</span><br><span class="line">	<span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">		putCount++;</span><br><span class="line">		size += safeSizeOf(key, value);</span><br><span class="line">		previous = map.put(key, value);</span><br><span class="line">		<span class="keyword">if</span> (previous != <span class="keyword">null</span>) &#123;</span><br><span class="line">			size -= safeSizeOf(key, previous);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (previous != <span class="keyword">null</span>) &#123;</span><br><span class="line">		entryRemoved(<span class="keyword">false</span>, key, previous, value);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	trimToSize(maxSize);</span><br><span class="line">	<span class="keyword">return</span> previous;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>(1) 首先计算存入的数据大小。<br>(2) 添加数据的大小。<br>(3) 保存到map中。<br>(4) 如果之前key保存的数据存在减去之前数据占用的大小。<br>(5) 检查缓存。  </p>
+<p>1.2.2 检查缓存</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">trimToSize</span><span class="params">(<span class="keyword">int</span> maxSize)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">		K key;</span><br><span class="line">		V value;</span><br><span class="line">		<span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">			<span class="keyword">if</span> (size &lt; <span class="number">0</span> || (map.isEmpty() &amp;&amp; size != <span class="number">0</span>)) &#123;</span><br><span class="line">				<span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(getClass().getName()</span><br><span class="line">						+ <span class="string">".sizeOf() is reporting inconsistent results!"</span>);</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (size &lt;= maxSize) &#123;</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			Map.Entry&lt;K, V&gt; toEvict = map.entrySet().iterator().next();</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (toEvict == <span class="keyword">null</span>) &#123;</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			key = toEvict.getKey();</span><br><span class="line">			value = toEvict.getValue();</span><br><span class="line">			map.remove(key);</span><br><span class="line">			size -= safeSizeOf(key, value);</span><br><span class="line">			evictionCount++;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		entryRemoved(<span class="keyword">true</span>, key, value, <span class="keyword">null</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>循环判断当前缓存大小是否超过最大值，如果超过清除使用。 LinkedHashMap提供特殊的构造方法来创建链接哈希映射，该哈希映射的迭代顺序就是最后访问其条目的顺序，从近期访问最少到近期访问最多的顺序（访问顺序）。这种映射很适合构建 LRU 缓存， 这里不做深入解释。所以第一条数据是很久没使用的数据，即为删除的数据。将缓存大小减去删除数据的大小。  </p>
+<p>1.2.3 获取数据  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> V <span class="title">get</span><span class="params">(K key)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (key == <span class="keyword">null</span>) &#123;</span><br><span class="line">          <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException(<span class="string">"key == null"</span>);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      V mapValue;</span><br><span class="line">      <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">          mapValue = map.get(key);</span><br><span class="line">          <span class="keyword">if</span> (mapValue != <span class="keyword">null</span>) &#123;</span><br><span class="line">              hitCount++;</span><br><span class="line">              <span class="keyword">return</span> mapValue;</span><br><span class="line">          &#125;</span><br><span class="line">          missCount++;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-Disk缓存（DiskLruCache）"><a href="#2-Disk缓存（DiskLruCache）" class="headerlink" title="2. Disk缓存（DiskLruCache）"></a>2. Disk缓存（DiskLruCache）</h3><p>*<em>2.1 成员变量 *</em>  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//保存缓存文件的文件夹</span></span><br><span class="line"> <span class="keyword">private</span> <span class="keyword">final</span> File directory;</span><br><span class="line"> <span class="comment">//保存缓存文件系统信息的文件。</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> File journalFile;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> File journalFileTmp;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> appVersion;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> maxSize;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> valueCount;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">long</span> size = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">private</span> Writer journalWriter;  </span><br><span class="line"><span class="comment">//用于保存缓存文件信息，初始化由journalFile解析赋值。</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> LinkedHashMap&lt;String, Entry&gt; lruEntries</span><br><span class="line">	= <span class="keyword">new</span> LinkedHashMap&lt;String, Entry&gt;(<span class="number">0</span>, <span class="number">0.75f</span>, <span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
+
+<p>*<em>2.2 重要方法 *</em>  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> DiskLruCache <span class="title">open</span><span class="params">(File directory, <span class="keyword">int</span> appVersion, <span class="keyword">int</span> valueCount, <span class="keyword">long</span> maxSize)</span></span></span><br><span class="line"><span class="function">		<span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line"></span><br><span class="line">	DiskLruCache cache = <span class="keyword">new</span> DiskLruCache(directory, appVersion, valueCount, maxSize);</span><br><span class="line">	<span class="keyword">if</span> (cache.journalFile.exists()) &#123;</span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">			cache.readJournal();</span><br><span class="line">			cache.processJournal();</span><br><span class="line">			cache.journalWriter = <span class="keyword">new</span> BufferedWriter(<span class="keyword">new</span> FileWriter(cache.journalFile, <span class="keyword">true</span>),</span><br><span class="line">					IO_BUFFER_SIZE);</span><br><span class="line">			<span class="keyword">return</span> cache;</span><br><span class="line">		&#125; <span class="keyword">catch</span> (IOException journalIsCorrupt) &#123;</span><br><span class="line"><span class="comment">//                System.logW("DiskLruCache " + directory + " is corrupt: "</span></span><br><span class="line"><span class="comment">//                        + journalIsCorrupt.getMessage() + ", removing");</span></span><br><span class="line">			cache.delete();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	directory.mkdirs();</span><br><span class="line">	cache = <span class="keyword">new</span> DiskLruCache(directory, appVersion, valueCount, maxSize);</span><br><span class="line">	cache.rebuildJournal();</span><br><span class="line">	<span class="keyword">return</span> cache;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">DiskLruCache</span><span class="params">(File directory, <span class="keyword">int</span> appVersion, <span class="keyword">int</span> valueCount, <span class="keyword">long</span> maxSize)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">this</span>.directory = directory;</span><br><span class="line">	<span class="keyword">this</span>.appVersion = appVersion;</span><br><span class="line">	<span class="keyword">this</span>.journalFile = <span class="keyword">new</span> File(directory, JOURNAL_FILE);</span><br><span class="line">	<span class="keyword">this</span>.journalFileTmp = <span class="keyword">new</span> File(directory, JOURNAL_FILE_TMP);</span><br><span class="line">	<span class="keyword">this</span>.valueCount = valueCount;</span><br><span class="line">	<span class="keyword">this</span>.maxSize = maxSize;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>(1)创建DiskLruCache实例对象。<br>(2)判断文件系统中是否存在缓存系统信息的文件。<br>(3)根据不同的情况分别初始化  </p>
+<p><img src="/image/image_cache/cache_init.png" alt="初始化流程图"></p>
+<hr>
+<p>首先了解 ： DIRTY这个字样都不代表着什么好事情，意味着这是一条脏数据。没错，每当我们调用一次DiskLruCache的edit()方法时，都会向journal文件中写入一条DIRTY记录，表示我们正准备写入一条缓存数据，但不知结果如何。然后调用commit()方法表示写入缓存成功，这时会向journal中写入一条CLEAN记录，意味着这条“脏”数据被“洗干净了”，调用abort()方法表示写入缓存失败，这时会向journal中写入一条REMOVE记录。也就是说，每一行DIRTY的key，后面都应该有一行对应的CLEAN或者REMOVE的记录，否则这条数据就是“脏”的，会被自动删除掉。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">synchronized</span> Editor <span class="title">edit</span><span class="params">(String key, <span class="keyword">long</span> expectedSequenceNumber)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	checkNotClosed();</span><br><span class="line">	validateKey(key);</span><br><span class="line">	Entry entry = lruEntries.get(key);</span><br><span class="line">	<span class="keyword">if</span> (expectedSequenceNumber != ANY_SEQUENCE_NUMBER</span><br><span class="line">			&amp;&amp; (entry == <span class="keyword">null</span> || entry.sequenceNumber != expectedSequenceNumber)) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">null</span>; <span class="comment">// snapshot is stale</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (entry == <span class="keyword">null</span>) &#123;</span><br><span class="line">		entry = <span class="keyword">new</span> Entry(key);</span><br><span class="line">		lruEntries.put(key, entry);</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (entry.currentEditor != <span class="keyword">null</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">null</span>; <span class="comment">// another edit is in progress</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	Editor editor = <span class="keyword">new</span> Editor(entry);</span><br><span class="line">	entry.currentEditor = editor;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// flush the journal before creating files to prevent file leaks</span></span><br><span class="line">	journalWriter.write(DIRTY + <span class="string">' '</span> + key + <span class="string">'\n'</span>);</span><br><span class="line">	journalWriter.flush();</span><br><span class="line">	<span class="keyword">return</span> editor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从缓存系统获取编辑器，然后想缓存信息文件中添加记录数据。  </p>
+<hr>
+<p>然后从Edit中获取OutputStream，从而网文件系统中写文件。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"> <span class="function"><span class="keyword">public</span> OutputStream <span class="title">newOutputStream</span><span class="params">(<span class="keyword">int</span> index)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	<span class="keyword">synchronized</span> (DiskLruCache.<span class="keyword">this</span>) &#123;</span><br><span class="line">		<span class="keyword">if</span> (entry.currentEditor != <span class="keyword">this</span>) &#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException();</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> FaultHidingOutputStream(<span class="keyword">new</span> FileOutputStream(entry.getDirtyFile(index)));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>当文件写完以后成功则调用Edit.commit(),失败则调用Edit.abort()</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">commit</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (hasErrors) &#123;</span><br><span class="line">		completeEdit(<span class="keyword">this</span>, <span class="keyword">false</span>);</span><br><span class="line">		remove(entry.key); <span class="comment">// the previous entry is stale</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		completeEdit(<span class="keyword">this</span>, <span class="keyword">true</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Aborts this edit. This releases the edit lock so another edit may be</span></span><br><span class="line"><span class="comment"> * started on the same key.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">abort</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	completeEdit(<span class="keyword">this</span>, <span class="keyword">false</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>继续看最重要的保存数据方法  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">completeEdit</span><span class="params">(Editor editor, <span class="keyword">boolean</span> success)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">       Entry entry = editor.entry;</span><br><span class="line">	</span><br><span class="line">	....</span><br><span class="line"></span><br><span class="line">       <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; valueCount; i++) &#123;</span><br><span class="line">           File dirty = entry.getDirtyFile(i);</span><br><span class="line">           <span class="keyword">if</span> (success) &#123;</span><br><span class="line">               <span class="keyword">if</span> (dirty.exists()) &#123;</span><br><span class="line">                   File clean = entry.getCleanFile(i);</span><br><span class="line">                   dirty.renameTo(clean);</span><br><span class="line">                   <span class="keyword">long</span> oldLength = entry.lengths[i];</span><br><span class="line">                   <span class="keyword">long</span> newLength = clean.length();</span><br><span class="line">                   entry.lengths[i] = newLength;</span><br><span class="line">                   size = size - oldLength + newLength;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">               deleteIfExists(dirty);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       redundantOpCount++;</span><br><span class="line">       entry.currentEditor = <span class="keyword">null</span>;</span><br><span class="line">       <span class="keyword">if</span> (entry.readable | success) &#123;</span><br><span class="line">           entry.readable = <span class="keyword">true</span>;</span><br><span class="line">           journalWriter.write(CLEAN + <span class="string">' '</span> + entry.key + entry.getLengths() + <span class="string">'\n'</span>);</span><br><span class="line">           <span class="keyword">if</span> (success) &#123;</span><br><span class="line">               entry.sequenceNumber = nextSequenceNumber++;</span><br><span class="line">           &#125;</span><br><span class="line">       &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           lruEntries.remove(entry.key);</span><br><span class="line">           journalWriter.write(REMOVE + <span class="string">' '</span> + entry.key + <span class="string">'\n'</span>);</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">if</span> (size &gt; maxSize || journalRebuildRequired()) &#123;</span><br><span class="line">           executorService.submit(cleanupCallable);</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>如果成功将DirtyFile转化为CleanFile，然后添加文件描述。<br>如果失败则删除DirtyFile，然后添加文件描述。<br>最后检查缓存大小，清理缓存系统。  </p>
+<hr>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> Snapshot <span class="title">get</span><span class="params">(String key)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	checkNotClosed();</span><br><span class="line">	validateKey(key);</span><br><span class="line">	Entry entry = lruEntries.get(key);</span><br><span class="line">	<span class="keyword">if</span> (entry == <span class="keyword">null</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!entry.readable) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	InputStream[] ins = <span class="keyword">new</span> InputStream[valueCount];</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; valueCount; i++) &#123;</span><br><span class="line">			ins[i] = <span class="keyword">new</span> FileInputStream(entry.getCleanFile(i));</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">catch</span> (FileNotFoundException e) &#123;</span><br><span class="line">		<span class="comment">// a file must have been deleted manually!</span></span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	redundantOpCount++;</span><br><span class="line">	journalWriter.append(READ + <span class="string">' '</span> + key + <span class="string">'\n'</span>);</span><br><span class="line">	<span class="keyword">if</span> (journalRebuildRequired()) &#123;</span><br><span class="line">		executorService.submit(cleanupCallable);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">new</span> Snapshot(key, entry.sequenceNumber, ins);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>每当我们调用get()方法去读取一条缓存数据时，就会向journal文件中写入一条READ记录。因为每次读取都会向journal文件中写入一条READ记录，所以也需要检查缓存。  </p>
+<hr>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Callable&lt;Void&gt; cleanupCallable = <span class="keyword">new</span> Callable&lt;Void&gt;() &#123;</span><br><span class="line">	<span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> Void <span class="title">call</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">		<span class="keyword">synchronized</span> (DiskLruCache.<span class="keyword">this</span>) &#123;</span><br><span class="line">			<span class="keyword">if</span> (journalWriter == <span class="keyword">null</span>) &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="keyword">null</span>; <span class="comment">// closed</span></span><br><span class="line">			&#125;</span><br><span class="line">			trimToSize();</span><br><span class="line">			<span class="keyword">if</span> (journalRebuildRequired()) &#123;</span><br><span class="line">				rebuildJournal();</span><br><span class="line">				redundantOpCount = <span class="number">0</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>缓存清理任务。首先清理缓存文件，然后重新生成journal文件。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.fuckcode.xyz/2015/10/16/%E5%9B%BE%E7%89%87%E4%B8%A4%E7%BA%A7%E7%BC%93%E5%AD%98%E8%A7%A3%E6%9E%90.html" title="图片两级缓存解析">http://www.fuckcode.xyz/2015/10/16/图片两级缓存解析.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/%E5%9B%BE%E7%89%87%E7%BC%93%E5%AD%98/" rel="tag"># 图片缓存</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2015/10/15/JVM%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6.html" rel="prev" title="JVM内存回收">
+      <i class="fa fa-chevron-left"></i> JVM内存回收
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2015/10/25/Glide%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90.html" rel="next" title="Glide 源码解析">
+      Glide 源码解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Memory缓存（LruCache）"><span class="nav-number">1.</span> <span class="nav-text">1. Memory缓存（LruCache）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-成员变量"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 成员变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-重要方法"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 重要方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Disk缓存（DiskLruCache）"><span class="nav-number">2.</span> <span class="nav-text">2. Disk缓存（DiskLruCache）</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Caij</p>
+  <div class="site-description" itemprop="description">厚积薄发</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID: 'af4bd8203af29949fd4c',
+      clientSecret: '9387549fb655911da2509580f429d1210a078c63',
+      repo: 'Caij.github.io',
+      owner: 'Caij',
+      admin: ['Caij'],
+      id: 'e53eba02694273544882a897fbcfc2e2',
+        language: '',
+      distractionFreeMode: 'true'
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
