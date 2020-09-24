@@ -46,19 +46,28 @@
   };
 </script>
 
-  <meta name="description" content="最近在做App启动优化，参考了一些文章，刚好也看了张绍文的Android开发高手课，就最近做的一些事做一个总结输出。">
+  <meta name="description" content="最近在做App启动优化，参考了一些文章，就最近做的一些事做一个总结输出。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="App启动优化">
-<meta property="og:url" content="http://www.fuckcode.xyz/2019/02/27/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html">
+<meta property="og:title" content="App启动优化实战">
+<meta property="og:url" content="http://www.fuckcode.xyz/2020/09/20/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html">
 <meta property="og:site_name" content="Caij">
-<meta property="og:description" content="最近在做App启动优化，参考了一些文章，刚好也看了张绍文的Android开发高手课，就最近做的一些事做一个总结输出。">
+<meta property="og:description" content="最近在做App启动优化，参考了一些文章，就最近做的一些事做一个总结输出。">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2019-02-26T16:00:00.000Z">
-<meta property="article:modified_time" content="2019-03-11T09:04:11.000Z">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/%E5%90%AF%E5%8A%A8%E4%BB%BB%E5%8A%A1%E8%80%97%E6%97%B6log.jpg">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/open_android_studio_trace_method.jpg">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/app_start_trace.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/data_accept.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/app_start_sq.jpg">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/systemtrace.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/trace_data.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/app_start_data.png">
+<meta property="article:published_time" content="2020-09-19T16:00:00.000Z">
+<meta property="article:modified_time" content="2020-09-24T10:52:39.108Z">
 <meta property="article:author" content="Caij">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://www.fuckcode.xyz/image/appstart/%E5%90%AF%E5%8A%A8%E4%BB%BB%E5%8A%A1%E8%80%97%E6%97%B6log.jpg">
 
-<link rel="canonical" href="http://www.fuckcode.xyz/2019/02/27/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html">
+<link rel="canonical" href="http://www.fuckcode.xyz/2020/09/20/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html">
 
 
 <script id="page-configurations">
@@ -70,7 +79,7 @@
   };
 </script>
 
-  <title>App启动优化 | Caij</title>
+  <title>App启动优化实战 | Caij</title>
   
 
 
@@ -200,7 +209,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
-    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2019/02/27/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2020/09/20/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -213,7 +222,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          App启动优化
+          App启动优化实战
         </h1>
 
         <div class="post-meta">
@@ -223,14 +232,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2019-02-27 00:00:00" itemprop="dateCreated datePublished" datetime="2019-02-27T00:00:00+08:00">2019-02-27</time>
+              <time title="Created: 2020-09-20 00:00:00" itemprop="dateCreated datePublished" datetime="2020-09-20T00:00:00+08:00">2020-09-20</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2019-03-11 17:04:11" itemprop="dateModified" datetime="2019-03-11T17:04:11+08:00">2019-03-11</time>
+                <time title="Modified: 2020-09-24 18:52:39" itemprop="dateModified" datetime="2020-09-24T18:52:39+08:00">2020-09-24</time>
               </span>
 
           
@@ -244,51 +253,61 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>最近在做App启动优化，参考了一些文章，刚好也看了张绍文的Android开发高手课，就最近做的一些事做一个总结输出。</p>
+        <p>最近在做App启动优化，参考了一些文章，就最近做的一些事做一个总结输出。</p>
 <a id="more"></a>  
 
-<h1 id="1-重要性"><a href="#1-重要性" class="headerlink" title="1.重要性"></a>1.重要性</h1><p>就像Android开发高手课讲到的在一些场景就能感觉到，比如扫码支付，微信和支付宝的打开时间就会影响用户的使用和留存。</p>
+<h1 id="1-重要性"><a href="#1-重要性" class="headerlink" title="1.重要性"></a>1.重要性</h1><p>比如正常App在启动性能很好能提高首页的曝光和点击，提高转化率。还比如扫码支付，微信和支付宝的打开时间就会影响用户的使用和留存。</p>
 <h1 id="2-启动分析"><a href="#2-启动分析" class="headerlink" title="2 启动分析"></a>2 启动分析</h1><p>首先我们需要分析App启动过程中的几个阶段。</p>
 <h2 id="2-1-启动过程"><a href="#2-1-启动过程" class="headerlink" title="2.1 启动过程"></a>2.1 启动过程</h2><ul>
 <li>首先是点击图标，创建App进程。</li>
 <li>Application的创建。</li>
 <li>闪屏Activity的创建。</li>
+<li>首页数据渲染</li>
 </ul>
-<h2 id="2-2-启动问题分析"><a href="#2-2-启动问题分析" class="headerlink" title="2.2 启动问题分析"></a>2.2 启动问题分析</h2><p>从启动流程的几个关键阶段，我们可以推测出用户启动过程会遇到的几个问题。这几个问题其实也是大多数应用在启动时可能会遇到的。</p>
-<ul>
+<h2 id="2-2-启动问题分析"><a href="#2-2-启动问题分析" class="headerlink" title="2.2 启动问题分析"></a>2.2 启动问题分析</h2><ul>
 <li>点击App图标，出现长时间的白屏。</li>
 <li>首页显示太慢。  </li>
 </ul>
-<h1 id="3-优化"><a href="#3-优化" class="headerlink" title="3 优化"></a>3 优化</h1><p>分析出问题后，我们就可以针对性的解决问题。</p>
-<h2 id="3-1-优化工具"><a href="#3-1-优化工具" class="headerlink" title="3.1 优化工具"></a>3.1 优化工具</h2><p>优化工具的作用就是统计方法耗时。Traceview 性能损耗太大，得出的结果并不真实;systrace 可以很方便地追踪关键系统调用的耗时情况，但是不支持应用程序代码的耗时分析;还有一种就是类似hugo的方案实现字节码插桩，统计方法耗时，我们之前就用这种方式，但是hugo只支持对项目代码的插桩，无法对lib代码插桩。<br>所以综合来看“systrace + 函数插桩”似乎是比较理想的方案， 然后实现对所有代码都可插桩的插件。至于Trace的使用，可自行了解。<br>至于插桩的方案，可对一些方法进行白名单出来，这样Trace文件图会容易看出问题，<strong>只有准确的数据评估才能指引优化的方向，这一步是非常非常重要的。我见过太多同学在没有充分评估或者评估使用了错误的方法，最终得到了错误的方向。辛辛苦苦一两个月，最后发现根本达不到预期的效果</strong>。</p>
-<h2 id="3-2-优化方案"><a href="#3-2-优化方案" class="headerlink" title="3.2 优化方案"></a>3.2 优化方案</h2><p>创造好工具后，我们就可以干活了</p>
-<p>** 进程启动优化 **<br>App进程孵化流程我们无法干预, 但是尽量减少App体积还是能优化进程的启动；Android提供了window background来设置预览背景, 当Activity还未启动，直接显示预览背景，让用户先看到页面，避免白屏，这种完全“跟手”的感觉在高端机上体验非常好，但对于中低端机，会把总的的闪屏时间变得更长，第二种是微信的方案，将预览闪屏页背景设置透明， 但这样会导致在桌面会需要顿一下才会开启App。这两种方案都较为常规，在网上也都有成熟的教程，所以App体积优化是我们更需要关注的点。</p>
-<p>** 业务优化 **</p>
-<ol>
-<li><p>Multidex 在安装过程中耗费大量的时间。其实优化方案就是异步加载，那么异步加载，但是在一些业务调用时Dex未加载完成，导致ClassNotFound问题。那么怎么才能解决这个问题呢，我记得之前美团提出一种方案是比较好的，文章现在找不到了，将Application、Service、Reciver、ContentPrivider以及主页面和主页面之前用到的Activity放到MainDex，然后在Application中异步加载其他Dex, 然后Hook系统的Instrumentation的创建Activity，发现如果Activity类找不到，就强行跳转到一个Loading界面，等待dex加载完成，这里或许大家有疑问, 为什么不在闪屏使用异步加载Dex，加载完后再跳转到首页，这里有个非常重要的知识点，<code>App启动不一定走闪屏页，因为存在App被回收重建的时候会直接调转到回收前的界面，所以一些必要的数据初始化必须放在Application里面</code>。然后就是maindex分包策略的文件生成，我这边一直没找到好的解决方案，都是手动维护，好在Multidex在5.0以后将会消失，应该也快了。  </p>
+<h1 id="3-优化"><a href="#3-优化" class="headerlink" title="3 优化"></a>3 优化</h1><h4 id="3-1-白屏"><a href="#3-1-白屏" class="headerlink" title="3.1 白屏"></a>3.1 白屏</h4><p>可通过设置启动activity window backgound解决。</p>
+<h4 id="3-2-启动任务分析"><a href="#3-2-启动任务分析" class="headerlink" title="3.2 启动任务分析"></a>3.2 启动任务分析</h4><p>1）通过日志方式输出启动任务耗时，发现初步的耗时任务进行优化。</p>
+<p><img src="/image/appstart/%E5%90%AF%E5%8A%A8%E4%BB%BB%E5%8A%A1%E8%80%97%E6%97%B6log.jpg" alt="启动任务耗时log"></p>
+<p>2）在解决初步明显的问题后，需要对任务进行精确分析，这个时候就需要采用工具统计方法耗。</p>
+<ul>
+<li><p>Traceview 可以获取方法的调用堆栈;</p>
 </li>
-<li><p>必要任务。必要任务分为同步和异步两块。在Application创建过程中，有些值必须同步调用，这块也没有好的解决办法，只能尽量减少，放到异步中。非必要任务。非不要任务可以延迟加载或者懒加载，减少启动时候的cpu、io、网络占用等问题。这块的理论很简单，但是实践非常难，历史包袱非常沉重，而且“牵一发动全身”，改动风险比较大。但是我想说，如果有合适的时机，我们依然需要勇敢去偿还这些“历史债务”。</p>
+<li><p>systrace 可以很方便地追踪关键系统调用的耗时情况，但是不支持应用程序代码的耗时分析;</p>
 </li>
-<li><p>高级特性dex重排和apk资源重排<br>Linux 文件系统从磁盘读文件的时候，会以 block 为单位去磁盘读取，一般 block 大小是 4KB。也就是说一次磁盘读写大小至少是 4KB，然后会把 4KB 数据放到页缓存 Page Cache 中。如果下次读取文件数据已经在页缓存中，那就不会发生真实的磁盘 I/O，而是直接从页缓存中读取，大大提升了读的速度。所以上面的例子，我们虽然读了 1000 次，但事实上只会发生一次磁盘 I/O，其他的数据都会在页缓存中得到。Dex 文件用的到的类和安装包 APK 里面各种资源文件一般都比较小，但是读取非常频繁。我们可以利用系统这个机制将它们按照读取顺序重新排列，减少真实的磁盘 I/O 次数。<br>Dex优化FaceBook出了一个开源的<code>Redex</code>，apk的资源重排支付宝和微信都出了相关的文章，但是没有开源工具。</p>
+</ul>
+<p>只有准确的数据评估才能指引优化的方向，这一步是非常非常重要的。我见过太多同学在没有充分评估或者评估使用了错误的方法，最终得到了错误的方向。辛辛苦苦一两个月，最后发现根本达不到预期的效果。</p>
+<p>Traceview的方式有两种</p>
+<ul>
+<li><p>方式一: 通过Android Studio Profile 开启启动trace method，开启后run app你会发现巨卡，而且出来的app method数据非常不准。另外release 版本没办法跑profile。</p>
+<p><img src="/image/appstart/open_android_studio_trace_method.jpg" alt="open_android_studio_trace_method"></p>
 </li>
-<li><p>减少App冷启动。</p>
+<li><p>方式二: 通过java 代码进行trace method ，而且这种方式可以跑release模式。在app 启动到首页数据渲染完成分别埋点， stop后会生成一个trace文件，在 sdcard/App/包名/file文件下面。导出文件到电脑使用Android Studio Profile文件打开。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Debug.startMethodTracingSampling(traceName, <span class="number">0</span>, sampleInterval);</span><br><span class="line"></span><br><span class="line">Debug.stopMethodTracing();</span><br></pre></td></tr></table></figure>
+
 </li>
-<li><p>减少进程调用；减少大数据分配从而减少GC。</p>
-</li>
-</ol>
-<h2 id="3-3优化实践"><a href="#3-3优化实践" class="headerlink" title="3.3优化实践"></a>3.3优化实践</h2><p>下面大概讲下自己在优化实践中的一些案例</p>
-<ol>
-<li>通过上述的工具统计耗时方法后，整理出整体的耗时方法流程图。 其实我们发现只有账号体系是需要在主线程同步从数据库获取，其他部分都可以异步加载，所以将其他任务更改为异步加载。</li>
-<li>初始化任务拆分。初始化任务拆分的好处是，每个任务独立， 就可以方便的只初始化必要任务。 其实这里分为两块， 一块是多进程减少非必要的初始化任务，一个是懒加载初始化任务和需要时才初始化。这里我们把每个任务独立一个plugin，按顺序初始化任务。我们App的进程拆分主要参考微信，主进程和tools进程，tools进程主要放webview和本地选图模块，所以tool进程都是懒加载，而且大部分组件在tools进程都没必要初始化。</li>
-<li>dex优化。 我们使用redex工具，对dex进行优化, 优化后，在老款手机还是比较明显，启动速度可以提升10%-20%， 新款机型提升较少5%左右。 使用dex优化后，后续我们遇到一个问题，就是和tinker热修复的打包有冲突，需要改tinker插件，所以后续我们放弃这个方案。</li>
-</ol>
-<h1 id="4-保护成果"><a href="#4-保护成果" class="headerlink" title="4 保护成果"></a>4 保护成果</h1><p>其实很多时候项目的开始，大家都想写好代码，写好性能，在开发的过程多人协同开发，在迭代的过程中就慢慢出现各种问题，所以保护成果尤为重要。我们做了一下几点。</p>
-<ol>
-<li>输出文档，入职员工必须阅读文档并写文档总结。</li>
-<li>Application层面的改代码必须codeview。</li>
-<li>定时跑App统计耗时的脚本，记录每个版本最终的数据，方便后面版本对比。</li>
-</ol>
-<h1 id="5-总结"><a href="#5-总结" class="headerlink" title="5 总结"></a>5 总结</h1><p>其实理论上很简单，其中的过程非法复杂，其中任务拆分，多进程拆分，整理出必要任务，任务懒加载，用时加载等都耗费大量的时间。但结果始终是好的，经过优化，启动整体提升了20%左右。</p>
+</ul>
+<p>分析demo</p>
+<p>分析app启动过程中的任务耗时情况。</p>
+<p><img src="/image/appstart/app_start_trace.png" alt="app_start_trace"></p>
+<p>对于一些隐藏的逻辑、主线程解析网络数据也可以分析出来</p>
+<p><img src="/image/appstart/data_accept.png" alt="data_accept"></p>
+<h3 id="3-3-启动任务依赖"><a href="#3-3-启动任务依赖" class="headerlink" title="3.3 启动任务依赖"></a>3.3 启动任务依赖</h3><p>任务ABC，其中BC依赖A, 当不编排的时候BC执行都需要等待A，有个任务线程是空等待的，其实可以先初始化A，再初始化BC。</p>
+<p>那有时候不明显的依赖关系如何排查。其实也可以通过trace method， trace会统计出所有线程的执行堆栈、对于不同线程执行重复的堆栈可以判断为重复依赖。</p>
+<p><a href="/2020/09/20/启动框架优化方案.html">启动框架设计</a></p>
+<h3 id="3-4-启动任务分阶段"><a href="#3-4-启动任务分阶段" class="headerlink" title="3.4 启动任务分阶段"></a>3.4 启动任务分阶段</h3><p><img src="/image/appstart/app_start_sq.jpg" alt="app_start_sq"></p>
+<p>将启动任务分为多个阶段</p>
+<p>1）启动到首页渲染完成</p>
+<p>2）渲染完成后</p>
+<p>3）闲时</p>
+<p>将非必要的任务放到闲时执行。</p>
+<h3 id="3-5-数据预处理"><a href="#3-5-数据预处理" class="headerlink" title="3.5 数据预处理"></a>3.5 数据预处理</h3><p>对于首页数据可以在app启动的时候就预加载和解析，解决首页数据白屏问题。</p>
+<h3 id="3-6-启动cpu和io管理"><a href="#3-6-启动cpu和io管理" class="headerlink" title="3.6 启动cpu和io管理"></a>3.6 启动cpu和io管理</h3><p>这部分可以采用Systrace埋点分析。具体用法可以搜索。可以看到线程的使用和等待、cpu等信息。</p>
+<p><img src="/image/appstart/systemtrace.png" alt="systemtrace"></p>
+<p><img src="/image/appstart/trace_data.png" alt="trace_data"></p>
+<h1 id="5-总结"><a href="#5-总结" class="headerlink" title="5 总结"></a>5 总结</h1><p>对于极客优化二进制重排、dex优化等在这里没有太深入研究。其实个人任务把基础技术和业务优化好能解决99%的问题。我们最终的优化数据总体效果还是非常好的。<br><img src="/image/appstart/app_start_data.png" alt="trace_data"></p>
 
     </div>
 
@@ -304,7 +323,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>Post link: </strong>
-    <a href="http://www.fuckcode.xyz/2019/02/27/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html" title="App启动优化">http://www.fuckcode.xyz/2019/02/27/App启动优化.html</a>
+    <a href="http://www.fuckcode.xyz/2020/09/20/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html" title="App启动优化实战">http://www.fuckcode.xyz/2020/09/20/App启动优化.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
@@ -321,12 +340,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2019/02/23/Gradle%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E6%8F%92%E6%A1%A9.html" rel="prev" title="Gradle插件实现插桩">
-      <i class="fa fa-chevron-left"></i> Gradle插件实现插桩
+    <a href="/2020/06/26/%E6%A8%A1%E5%9D%97%E5%8C%96-3%20%E6%A8%A1%E5%9D%97%E9%80%9A%E4%BF%A1%20.html" rel="prev" title="模块化-3 模块通信">
+      <i class="fa fa-chevron-left"></i> 模块化-3 模块通信
     </a></div>
       <div class="post-nav-item">
-    <a href="/2019/02/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html" rel="next" title="App体积优化">
-      App体积优化 <i class="fa fa-chevron-right"></i>
+    <a href="/2020/09/20/%E5%90%AF%E5%8A%A8%E6%A1%86%E6%9E%B6%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88.html" rel="next" title="启动框架设计和优化">
+      启动框架设计和优化 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -388,7 +407,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-重要性"><span class="nav-number">1.</span> <span class="nav-text">1.重要性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-启动分析"><span class="nav-number">2.</span> <span class="nav-text">2 启动分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-启动过程"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 启动过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-启动问题分析"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 启动问题分析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-优化"><span class="nav-number">3.</span> <span class="nav-text">3 优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-优化工具"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 优化工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-优化方案"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 优化方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3优化实践"><span class="nav-number">3.3.</span> <span class="nav-text">3.3优化实践</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-保护成果"><span class="nav-number">4.</span> <span class="nav-text">4 保护成果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-总结"><span class="nav-number">5.</span> <span class="nav-text">5 总结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-重要性"><span class="nav-number">1.</span> <span class="nav-text">1.重要性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-启动分析"><span class="nav-number">2.</span> <span class="nav-text">2 启动分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-启动过程"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 启动过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-启动问题分析"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 启动问题分析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-优化"><span class="nav-number">3.</span> <span class="nav-text">3 优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-白屏"><span class="nav-number">3.0.0.1.</span> <span class="nav-text">3.1 白屏</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-启动任务分析"><span class="nav-number">3.0.0.2.</span> <span class="nav-text">3.2 启动任务分析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-启动任务依赖"><span class="nav-number">3.0.1.</span> <span class="nav-text">3.3 启动任务依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-启动任务分阶段"><span class="nav-number">3.0.2.</span> <span class="nav-text">3.4 启动任务分阶段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-数据预处理"><span class="nav-number">3.0.3.</span> <span class="nav-text">3.5 数据预处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-启动cpu和io管理"><span class="nav-number">3.0.4.</span> <span class="nav-text">3.6 启动cpu和io管理</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-总结"><span class="nav-number">4.</span> <span class="nav-text">5 总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -402,7 +421,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">51</span>
+          <span class="site-state-item-count">52</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -510,7 +529,7 @@ NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
       repo: 'Caij.github.io',
       owner: 'Caij',
       admin: ['Caij'],
-      id: 'b412921ec9b681adbdc9193c026ad805',
+      id: '38152e1c9c1b86c04c1f3934ec3975f4',
         language: '',
       distractionFreeMode: 'true'
     });
