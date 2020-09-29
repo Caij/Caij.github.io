@@ -57,12 +57,13 @@
 <meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/open_android_studio_trace_method.jpg">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/app_start_trace.png">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/data_accept.png">
-<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/app_start_sq.jpg">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/systemtrace.png">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/trace_data.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/app_start_sq.jpg">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/%E5%90%AF%E5%8A%A8%E4%BE%9D%E8%B5%96%E5%9B%BE.png">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/app_start_data.png">
 <meta property="article:published_time" content="2020-09-19T16:00:00.000Z">
-<meta property="article:modified_time" content="2020-09-24T11:06:51.794Z">
+<meta property="article:modified_time" content="2020-09-29T11:41:09.244Z">
 <meta property="article:author" content="Caij">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://www.fuckcode.xyz/image/appstart/%E5%90%AF%E5%8A%A8%E4%BB%BB%E5%8A%A1%E8%80%97%E6%97%B6log.jpg">
@@ -239,7 +240,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-24 19:06:51" itemprop="dateModified" datetime="2020-09-24T19:06:51+08:00">2020-09-24</time>
+                <time title="Modified: 2020-09-29 19:41:09" itemprop="dateModified" datetime="2020-09-29T19:41:09+08:00">2020-09-29</time>
               </span>
 
           
@@ -264,12 +265,7 @@
 <li>闪屏Activity的创建。</li>
 <li>首页数据渲染</li>
 </ul>
-<h2 id="2-2-启动问题分析"><a href="#2-2-启动问题分析" class="headerlink" title="2.2 启动问题分析"></a>2.2 启动问题分析</h2><ul>
-<li>点击App图标，出现长时间的白屏。</li>
-<li>首页显示太慢。  </li>
-</ul>
-<h1 id="3-优化"><a href="#3-优化" class="headerlink" title="3 优化"></a>3 优化</h1><h4 id="3-1-白屏"><a href="#3-1-白屏" class="headerlink" title="3.1 白屏"></a>3.1 白屏</h4><p>可通过设置启动activity window backgound解决。</p>
-<h4 id="3-2-启动任务分析"><a href="#3-2-启动任务分析" class="headerlink" title="3.2 启动任务分析"></a>3.2 启动任务分析</h4><p>1）通过日志方式输出启动任务耗时，发现初步的耗时任务进行优化。</p>
+<h2 id="2-2-启动问题分析"><a href="#2-2-启动问题分析" class="headerlink" title="2.2 启动问题分析"></a>2.2 启动问题分析</h2><h4 id="1-启动任务耗时分析"><a href="#1-启动任务耗时分析" class="headerlink" title="1 启动任务耗时分析"></a>1 启动任务耗时分析</h4><p>1）通过日志方式输出启动任务耗时，发现初步的耗时任务进行优化。</p>
 <p><img src="/image/appstart/%E5%90%AF%E5%8A%A8%E4%BB%BB%E5%8A%A1%E8%80%97%E6%97%B6log.jpg" alt="启动任务耗时log"></p>
 <p>2）在解决初步明显的问题后，需要对任务进行精确分析，这个时候就需要采用工具统计方法耗。</p>
 <ul>
@@ -289,25 +285,32 @@
 
 </li>
 </ul>
-<p>分析demo</p>
-<p>分析app启动过程中的任务耗时情况。</p>
+<p>通过trace文件分析启动方法耗时。</p>
 <p><img src="/image/appstart/app_start_trace.png" alt="app_start_trace"></p>
 <p>对于一些隐藏的逻辑、主线程解析网络数据也可以分析出来</p>
 <p><img src="/image/appstart/data_accept.png" alt="data_accept"></p>
-<h3 id="3-3-启动任务依赖"><a href="#3-3-启动任务依赖" class="headerlink" title="3.3 启动任务依赖"></a>3.3 启动任务依赖</h3><p>任务ABC，其中BC依赖A, 当不编排的时候BC执行都需要等待A，有个任务线程是空等待的，其实可以先初始化A，再初始化BC。</p>
-<p>那有时候不明显的依赖关系如何排查。其实也可以通过trace method， trace会统计出所有线程的执行堆栈、对于不同线程执行重复的堆栈可以判断为重复依赖。</p>
-<p><a href="/2020/09/20/启动框架优化方案.html">启动框架设计</a></p>
-<h3 id="3-4-启动任务分阶段"><a href="#3-4-启动任务分阶段" class="headerlink" title="3.4 启动任务分阶段"></a>3.4 启动任务分阶段</h3><p><img src="/image/appstart/app_start_sq.jpg" alt="app_start_sq"></p>
-<p>将启动任务分为多个阶段</p>
-<p>1）启动到首页渲染完成</p>
-<p>2）渲染完成后</p>
-<p>3）闲时</p>
-<p>将非必要的任务放到闲时执行。</p>
-<h3 id="3-5-数据预处理"><a href="#3-5-数据预处理" class="headerlink" title="3.5 数据预处理"></a>3.5 数据预处理</h3><p>对于首页数据可以在app启动的时候就预加载和解析，解决首页数据白屏问题。</p>
-<h3 id="3-6-启动cpu和io管理"><a href="#3-6-启动cpu和io管理" class="headerlink" title="3.6 启动cpu和io管理"></a>3.6 启动cpu和io管理</h3><p>这部分可以采用Systrace埋点分析。具体用法可以搜索。可以看到线程的使用和等待、cpu等信息。</p>
+<h4 id="2-启动任务打散"><a href="#2-启动任务打散" class="headerlink" title="2 启动任务打散"></a>2 启动任务打散</h4><p>结合Systrace可以查看cpu和iO的使用信息。</p>
+<p>CPU duration <strong>xx ms</strong>，wall duration <strong>xxx ms</strong>！大量的等待执行时间。</p>
 <p><img src="/image/appstart/systemtrace.png" alt="systemtrace"></p>
 <p><img src="/image/appstart/trace_data.png" alt="trace_data"></p>
-<h1 id="5-总结"><a href="#5-总结" class="headerlink" title="5 总结"></a>5 总结</h1><p>对于极客优化二进制重排、dex优化等在这里没有太深入研究。<br>其实个人认为把基础技术和业务优化好能解决99%的问题。我们最终的优化数据总体效果还是非常好的。<br><img src="/image/appstart/app_start_data.png" alt="trace_data"></p>
+<p>将启动任务分为多个阶段，找到那些让系统高负载的模块，再打散到各个时间点去，错峰运行。</p>
+<p>1）启动到首页渲染完成</p>
+<p>2）渲染完成后</p>
+<p>3）闲时<br><img src="/image/appstart/app_start_sq.jpg" alt="app_start_sq"></p>
+<h4 id="3-启动任务依赖"><a href="#3-启动任务依赖" class="headerlink" title="3 启动任务依赖"></a>3 启动任务依赖</h4><p>任务ABC，其中BC依赖A, 当不编排的时候BC执行都需要等待A，有个任务线程是空等待的，其实可以先初始化A，再初始化BC。</p>
+<p><img src="/image/appstart/%E5%90%AF%E5%8A%A8%E4%BE%9D%E8%B5%96%E5%9B%BE.png" alt="启动依赖图"></p>
+<p>那有时候不明显的依赖关系如何排查。其实也可以通过trace method， trace会统计出所有线程的执行堆栈、对于不同线程执行重复的堆栈可以判断为重复依赖。</p>
+<p><a href="/2020/09/20/启动框架优化方案.html">启动框架设计</a></p>
+<h4 id="4-数据预处理"><a href="#4-数据预处理" class="headerlink" title="4 数据预处理"></a>4 数据预处理</h4><p>简单说下背景。首页现有的逻辑：</p>
+<ul>
+<li><p>加载打底数据；</p>
+</li>
+<li><p>请求网络数据，请求回来，再次刷新界面。</p>
+</li>
+</ul>
+<p>加载打底数据是为了防止白屏；但是打底数据上屏之后，又会发起网络请求，有新数据下来后，重新刷新界面，就是我们常说的二刷，二刷很影响实际的用户体验，相信大家都深有感触。</p>
+<h4 id="5-其他"><a href="#5-其他" class="headerlink" title="5 其他"></a>5 其他</h4><p>二进制重排<br>首页和welcome页面合并<br>等</p>
+<h1 id="3-总结"><a href="#3-总结" class="headerlink" title="3 总结"></a>3 总结</h1><p>其实个人认为把基础技术和业务优化好能解决99%的问题。我们最终的优化数据。<br><img src="/image/appstart/app_start_data.png" alt="trace_data"></p>
 
     </div>
 
@@ -340,13 +343,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/06/26/%E6%A8%A1%E5%9D%97%E5%8C%96-3%20%E6%A8%A1%E5%9D%97%E9%80%9A%E4%BF%A1%20.html" rel="prev" title="模块化-3 模块通信">
-      <i class="fa fa-chevron-left"></i> 模块化-3 模块通信
+    <a href="/2020/09/20/%E5%90%AF%E5%8A%A8%E6%A1%86%E6%9E%B6%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88.html" rel="prev" title="启动框架设计和优化">
+      <i class="fa fa-chevron-left"></i> 启动框架设计和优化
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/09/20/%E5%90%AF%E5%8A%A8%E6%A1%86%E6%9E%B6%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88.html" rel="next" title="启动框架设计和优化">
-      启动框架设计和优化 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -407,7 +407,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-重要性"><span class="nav-number">1.</span> <span class="nav-text">1.重要性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-启动分析"><span class="nav-number">2.</span> <span class="nav-text">2 启动分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-启动过程"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 启动过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-启动问题分析"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 启动问题分析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-优化"><span class="nav-number">3.</span> <span class="nav-text">3 优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-白屏"><span class="nav-number">3.0.0.1.</span> <span class="nav-text">3.1 白屏</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-启动任务分析"><span class="nav-number">3.0.0.2.</span> <span class="nav-text">3.2 启动任务分析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-启动任务依赖"><span class="nav-number">3.0.1.</span> <span class="nav-text">3.3 启动任务依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-启动任务分阶段"><span class="nav-number">3.0.2.</span> <span class="nav-text">3.4 启动任务分阶段</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-数据预处理"><span class="nav-number">3.0.3.</span> <span class="nav-text">3.5 数据预处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-启动cpu和io管理"><span class="nav-number">3.0.4.</span> <span class="nav-text">3.6 启动cpu和io管理</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-总结"><span class="nav-number">4.</span> <span class="nav-text">5 总结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-重要性"><span class="nav-number">1.</span> <span class="nav-text">1.重要性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-启动分析"><span class="nav-number">2.</span> <span class="nav-text">2 启动分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-启动过程"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 启动过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-启动问题分析"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 启动问题分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-启动任务耗时分析"><span class="nav-number">2.2.0.1.</span> <span class="nav-text">1 启动任务耗时分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-启动任务打散"><span class="nav-number">2.2.0.2.</span> <span class="nav-text">2 启动任务打散</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-启动任务依赖"><span class="nav-number">2.2.0.3.</span> <span class="nav-text">3 启动任务依赖</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-数据预处理"><span class="nav-number">2.2.0.4.</span> <span class="nav-text">4 数据预处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-其他"><span class="nav-number">2.2.0.5.</span> <span class="nav-text">5 其他</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-总结"><span class="nav-number">3.</span> <span class="nav-text">3 总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
