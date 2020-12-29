@@ -48,16 +48,19 @@
 
   <meta name="description" content="对于大型App来说，启动任务多，任务依赖复杂，如何使用启动框架来合理的编排任务，提高线程运行效率是重点关注的问题。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="启动框架设计和优化">
+<meta property="og:title" content="启动框架设计">
 <meta property="og:url" content="http://www.fuckcode.xyz/2020/09/20/%E5%90%AF%E5%8A%A8%E6%A1%86%E6%9E%B6%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88.html">
 <meta property="og:site_name" content="Caij">
 <meta property="og:description" content="对于大型App来说，启动任务多，任务依赖复杂，如何使用启动框架来合理的编排任务，提高线程运行效率是重点关注的问题。">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/%E5%90%AF%E5%8A%A8%E4%BE%9D%E8%B5%96%E5%9B%BE.png">
-<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/%E4%BB%BB%E5%8A%A1%E4%BE%9D%E8%B5%96.png">
-<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/task_run_manager.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/task_dependence.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/task_sys_trace.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/task_cost.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/appstart/app_start_sq.jpg">
 <meta property="article:published_time" content="2020-09-19T16:00:00.000Z">
-<meta property="article:modified_time" content="2020-09-24T09:17:05.820Z">
+<meta property="article:modified_time" content="2020-12-18T05:34:18.170Z">
 <meta property="article:author" content="Caij">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://www.fuckcode.xyz/image/appstart/%E5%90%AF%E5%8A%A8%E4%BE%9D%E8%B5%96%E5%9B%BE.png">
@@ -74,7 +77,7 @@
   };
 </script>
 
-  <title>启动框架设计和优化 | Caij</title>
+  <title>启动框架设计 | Caij</title>
   
 
 
@@ -217,7 +220,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          启动框架设计和优化
+          启动框架设计
         </h1>
 
         <div class="post-meta">
@@ -234,7 +237,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-24 17:17:05" itemprop="dateModified" datetime="2020-09-24T17:17:05+08:00">2020-09-24</time>
+                <time title="Modified: 2020-12-18 13:34:18" itemprop="dateModified" datetime="2020-12-18T13:34:18+08:00">2020-12-18</time>
               </span>
 
           
@@ -251,20 +254,22 @@
         <p>对于大型App来说，启动任务多，任务依赖复杂，如何使用启动框架来合理的编排任务，提高线程运行效率是重点关注的问题。</p>
 <a id="more"></a>
 
-<h3 id="1-任务依赖"><a href="#1-任务依赖" class="headerlink" title="1 任务依赖"></a>1 任务依赖</h3><p>目前我们开发的App启动阶段需要做的事情很多，启动各步骤之间存在先后依赖关系，最初启动框架1.0 的时候，为了提升性能，简单的采用多线程并发执行的，总体逻辑比较复杂，不容易维护。所以我们决定启动框架2.0采用有向无环图(DGA)的方式实现和管理任务。</p>
+<h3 id="1-启动框架设计概述"><a href="#1-启动框架设计概述" class="headerlink" title="1 启动框架设计概述"></a>1 启动框架设计概述</h3><h4 id="1-任务管理"><a href="#1-任务管理" class="headerlink" title="1 任务管理"></a>1 任务管理</h4><p>目前我们开发的App启动阶段需要做的事情很多，启动各步骤之间存在先后依赖关系，最初启动框架1.0 的时候，简单的采用多线程并发执行，总体逻辑比较复杂，不容易维护，任务执行效率低，所以我们决定启动框架2.0采用有向无环图(DGA)的方式实现和管理任务。</p>
 <p><img src="/image/appstart/%E5%90%AF%E5%8A%A8%E4%BE%9D%E8%B5%96%E5%9B%BE.png" alt="启动依赖图"></p>
 <p>解决任务依赖关系有类似的框架，（官方Startup和Alpha等），为什么我们需要自研一套？</p>
 <ul>
-<li>Startup现阶段依赖关系只能支持主线程。</li>
+<li>Startup现阶段不支持线程调度。</li>
 <li>Alpha对于复杂场景线程切换支持不够完美。</li>
 </ul>
-<h3 id="2-复杂场景"><a href="#2-复杂场景" class="headerlink" title="2 复杂场景"></a>2 复杂场景</h3><p>2.1 限定D任务必须在主线程阻塞执行的时候当如何设计？。</p>
+<h4 id="2-线程调度"><a href="#2-线程调度" class="headerlink" title="2 线程调度"></a>2 线程调度</h4><p><strong>2.1 实例场景</strong>：限定D任务必须在主线程App Create阶段执行。</p>
 <p>高效率执行方式：A B C 同时异步执行 执行完成后再执行D。</p>
 <p>但当真正实现的时候发现ABC异步执行，再通过main handler 把D任务通知到主线程执行，你会发现app create 主线程根本没办法阻塞，直接执行结束。（Alpha的设计就是如此）</p>
-<p><img src="/image/appstart/%E4%BB%BB%E5%8A%A1%E4%BE%9D%E8%B5%96.png" alt="任务依赖"></p>
-<p>不理解的可以看下面的图</p>
-<p><img src="/image/appstart/%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F.png" alt="执行顺序"></p>
-<p>2.2 实现</p>
+<p><img src="/image/appstart/task_run_manager.png" alt="任务依赖"></p>
+<p>从代码层面可以看做是这样。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">public void onCreate() &#123;</span><br><span class="line">    super.onCreate();</span><br><span class="line">    Thread a &#x3D; new Thread()&#123;</span><br><span class="line">        @Override</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            super.run();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;.start();</span><br><span class="line"></span><br><span class="line">    Thread b &#x3D; new Thread()&#123;</span><br><span class="line">        @Override</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            super.run();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;.start();</span><br><span class="line"></span><br><span class="line">    Thread c &#x3D; new Thread()&#123;</span><br><span class="line">        @Override</span><br><span class="line">        public void run() &#123;</span><br><span class="line">            super.run();</span><br><span class="line">            new Handler(Looper.getMainLooper()).post(new Runnable() &#123;</span><br><span class="line">                @Override</span><br><span class="line">                public void run() &#123;</span><br><span class="line"></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;.start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>2.2 实现概述</strong></p>
 <p>出现上述场景后我们考虑通过添加锁等待的方式来实现执行阻塞。</p>
 <ul>
 <li>将启动框架所有任务放在子线程中执行</li>
@@ -273,7 +278,22 @@
 <li>需要阻塞的任务在执行完成的时候会触发waitCountDownLatch.countDown()</li>
 <li>启动框架start的时候触发waitCountDownLatch.await等待。</li>
 </ul>
-<p>整体的设计比较轻量、整个框架一共5个类。</p>
+<h3 id="2-代码实现"><a href="#2-代码实现" class="headerlink" title="2 代码实现"></a>2 代码实现</h3><p>启动框架设计概念分为Project和Task两个概念，Project管理多个Task，简单理解是Project表示一个阶段的任务管理类，一般启动分为多个阶段App create, idle等。</p>
+<p><strong>依赖管理</strong><br>Project将Task的依赖关系构建成一个双向链表，通过每一个节点持有相邻节点的引用来构建整个Project。需注意Project中的节点之间不能构成循环。<br>一个Task执行完成后，会通知后继节点，后继节点Task会检测自己的依赖节点，如果依赖阶段已经为空，则执行。然后任务还需提供优先级执行。<br>最终实现的api类似官方appstartup</p>
+<p><img src="/image/appstart/task_dependence.png" alt="systrace"></p>
+<p><strong>线程调度</strong><br>每个Project支持配置线程。</p>
+<p><strong>调试</strong><br>支持扩展，实现systrace埋点<br><img src="/image/appstart/task_sys_trace.png" alt="systrace"></p>
+<p>子任务耗时<br><img src="/image/appstart/task_cost.png" alt="systrace"></p>
+<p><strong>异常检测</strong></p>
+<p>Crash管理<br>在debug阶段，任务执行的异常将会抛出，开发感知解决。正式版发布，任务执行的异常将会直接catch。</p>
+<p>死锁检测<br>有线程等待，那避免不了死锁的问题，大型App，真的难以发现SDK中做了什么初始化，所以每个任务通过开启一个子线程监控执行时长来判断死锁问题。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">runnable &#x3D; new Runnable() &#123;</span><br><span class="line">	@Override</span><br><span class="line">	public void run() &#123;</span><br><span class="line">		ANREx	ception anrException &#x3D; new ANRException(thread);</span><br><span class="line">		TLog.loge(Config.TAG, &quot;task anr &quot;, anrException);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line">Config.checkHandler().postDelayed(runnable, 5 * 1000);</span><br></pre></td></tr></table></figure>
+
+<p>死锁场景</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.onCreate();</span><br><span class="line">    <span class="keyword">new</span> Thread() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>.run();</span><br><span class="line">            <span class="keyword">new</span> Handler(Looper.getMainLooper()).post(<span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                    notifyAll();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;.run();</span><br><span class="line">    wait();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-上层"><a href="#3-上层" class="headerlink" title="3 上层"></a>3 上层</h3><p>有了任务的管理和执行核心引擎，还需要细分任务执行的阶段，上层封装将任务打散，避免集中在启动阶段。开发同学只需要关系自己的任务放在哪个阶段。<br><img src="/image/appstart/app_start_sq.jpg" alt="systrace"></p>
+<h3 id="4-后续计划"><a href="#4-后续计划" class="headerlink" title="4 后续计划"></a>4 后续计划</h3><p>目前的启动任务编排主要借助method trace和systrace工具进行分析编排，后续希望对启动的各阶段任务进行格式化的日志输出，通过解析格式化日志，来将启动的DAG图进行输出，可以是类似手淘框架输出的html，也可以考虑结合android studio的插件开发，做成类似layout布局这种，既可以可视化输出，又可以可视化的编辑启动任务，生成代码</p>
 
     </div>
 
@@ -289,7 +309,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>Post link: </strong>
-    <a href="http://www.fuckcode.xyz/2020/09/20/%E5%90%AF%E5%8A%A8%E6%A1%86%E6%9E%B6%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88.html" title="启动框架设计和优化">http://www.fuckcode.xyz/2020/09/20/启动框架优化方案.html</a>
+    <a href="http://www.fuckcode.xyz/2020/09/20/%E5%90%AF%E5%8A%A8%E6%A1%86%E6%9E%B6%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88.html" title="启动框架设计">http://www.fuckcode.xyz/2020/09/20/启动框架优化方案.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
@@ -373,7 +393,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-任务依赖"><span class="nav-number">1.</span> <span class="nav-text">1 任务依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-复杂场景"><span class="nav-number">2.</span> <span class="nav-text">2 复杂场景</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-启动框架设计概述"><span class="nav-number">1.</span> <span class="nav-text">1 启动框架设计概述</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-任务管理"><span class="nav-number">1.1.</span> <span class="nav-text">1 任务管理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-线程调度"><span class="nav-number">1.2.</span> <span class="nav-text">2 线程调度</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-代码实现"><span class="nav-number">2.</span> <span class="nav-text">2 代码实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-上层"><span class="nav-number">3.</span> <span class="nav-text">3 上层</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-后续计划"><span class="nav-number">4.</span> <span class="nav-text">4 后续计划</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
