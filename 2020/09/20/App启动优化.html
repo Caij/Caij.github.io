@@ -48,7 +48,7 @@
 
   <meta name="description" content="最近在做App启动优化，参考了一些文章，就最近做的一些事做一个总结输出。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="App启动优化实战">
+<meta property="og:title" content="App启动优化">
 <meta property="og:url" content="http://www.fuckcode.xyz/2020/09/20/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html">
 <meta property="og:site_name" content="Caij">
 <meta property="og:description" content="最近在做App启动优化，参考了一些文章，就最近做的一些事做一个总结输出。">
@@ -69,7 +69,7 @@
 <meta property="og:image" content="https://intranetproxy.alipay.com/skylark/lark/0/2020/png/26323/1594779594290-0d6a5db8-ddb8-491c-a768-4e5cfea80014.png?x-oss-process=image%252Fresize%252Cw_1500">
 <meta property="og:image" content="https://ata2-img.oss-cn-zhangjiakou.aliyuncs.com/8dfe0a1245baa09b344a0956a9064cf4.jpg">
 <meta property="article:published_time" content="2020-09-19T16:00:00.000Z">
-<meta property="article:modified_time" content="2020-12-29T06:49:29.024Z">
+<meta property="article:modified_time" content="2021-02-20T12:03:48.957Z">
 <meta property="article:author" content="Caij">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://ata2-img.oss-cn-zhangjiakou.aliyuncs.com/c1f2f16f219e13557193a7319d841bd2.png">
@@ -86,7 +86,7 @@
   };
 </script>
 
-  <title>App启动优化实战 | Caij</title>
+  <title>App启动优化 | Caij</title>
   
 
 
@@ -229,7 +229,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          App启动优化实战
+          App启动优化
         </h1>
 
         <div class="post-meta">
@@ -246,7 +246,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-12-29 14:49:29" itemprop="dateModified" datetime="2020-12-29T14:49:29+08:00">2020-12-29</time>
+                <time title="Modified: 2021-02-20 20:03:48" itemprop="dateModified" datetime="2021-02-20T20:03:48+08:00">2021-02-20</time>
               </span>
 
           
@@ -300,6 +300,7 @@
 <p>为了优化首页布局耗时问题，在启动任务的时候，对首页布局做预加载， 优化后减少200ms。</p>
 <p><img src="https://ata2-img.oss-cn-zhangjiakou.aliyuncs.com/9764ce0e434d8a220c56829a74fccbd1.png" alt="image.png"></p>
 <h4 id="3-图片上屏优化"><a href="#3-图片上屏优化" class="headerlink" title="3 图片上屏优化"></a>3 图片上屏优化</h4><p>针对图片加载成功的回调handler事件，提高优先级，图片框架已经支持。<br>RxModel4Phenix.setUsePostAtFront(true);<br>DefaultSchedulerSupplier.setUsePostFrontUI(true);<br>详情见 <a href="https://www.atatech.org/articles/178314?spm=ata.13269325.0.0.793149fa8lgRDL" target="_blank" rel="noopener">https://www.atatech.org/articles/178314?spm=ata.13269325.0.0.793149fa8lgRDL</a></p>
+<p>实际原理是通过将图片设置的message放置到handler message queue 头部，提高图片渲染事件的优先级。</p>
 <h4 id="4-多个进程问题"><a href="#4-多个进程问题" class="headerlink" title="4 多个进程问题"></a>4 多个进程问题</h4><ul>
 <li>com.taobao.litetao：主进程</li>
 <li>com.taobao.litetao:sandboxed_privilege_process0：uc&amp;windvane独立进程</li>
@@ -336,7 +337,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>Post link: </strong>
-    <a href="http://www.fuckcode.xyz/2020/09/20/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html" title="App启动优化实战">http://www.fuckcode.xyz/2020/09/20/App启动优化.html</a>
+    <a href="http://www.fuckcode.xyz/2020/09/20/App%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96.html" title="App启动优化">http://www.fuckcode.xyz/2020/09/20/App启动优化.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
@@ -356,7 +357,10 @@
     <a href="/2020/09/20/%E5%90%AF%E5%8A%A8%E6%A1%86%E6%9E%B6%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88.html" rel="prev" title="启动框架设计">
       <i class="fa fa-chevron-left"></i> 启动框架设计
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/21/Android%20Trace%E5%AE%9E%E6%88%98.html" rel="next" title="Android Trace实战">
+      Android Trace实战 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -431,7 +435,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-count">53</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -465,7 +469,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
