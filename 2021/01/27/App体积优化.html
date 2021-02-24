@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/image/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/image/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://www.fuckcode.xyz').hostname,
+    root: '/',
+    scheme: 'Mist',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"right","display":"hide","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":true,"show_result":true,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，作为一个非心智成熟型App，apk影响拉新用户转化率，谷歌给出了一个很详细的数据，包体大小每上升 6MB，应用下载转化率就会下降 1%.  2020年app包大小从60M减小到35M，算上业务增量，实际缩包30M。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="App体积优化">
+<meta property="og:url" content="http://www.fuckcode.xyz/2021/01/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html">
+<meta property="og:site_name" content="Caij">
+<meta property="og:description" content="随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，作为一个非心智成熟型App，apk影响拉新用户转化率，谷歌给出了一个很详细的数据，包体大小每上升 6MB，应用下载转化率就会下降 1%.  2020年app包大小从60M减小到35M，算上业务增量，实际缩包30M。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/apk_analyz.jpg">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/arsc_info.jpg">
+<meta property="og:image" content="https://ata2-img.oss-cn-zhangjiakou.aliyuncs.com/54079b957cdfa4b93bd25a8fa743dabb.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/code_trace_info.jpg">
+<meta property="article:published_time" content="2021-01-26T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-02-24T07:38:58.921Z">
+<meta property="article:author" content="Caij">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://www.fuckcode.xyz/image/apksize/apk_analyz.jpg">
+
+<link rel="canonical" href="http://www.fuckcode.xyz/2021/01/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>App体积优化 | Caij</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Caij</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">厚积薄发</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="Searching..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://www.fuckcode.xyz/2021/01/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Caij">
+      <meta itemprop="description" content="厚积薄发">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Caij">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          App体积优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-27 00:00:00" itemprop="dateCreated datePublished" datetime="2021-01-27T00:00:00+08:00">2021-01-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-24 15:38:58" itemprop="dateModified" datetime="2021-02-24T15:38:58+08:00">2021-02-24</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，<br>作为一个非心智成熟型App，apk影响拉新用户转化率，谷歌给出了一个很详细的数据，包体大小每上升 6MB，应用下载转化率就会下降 1%.  2020年app包大小从60M减小到35M，算上业务增量，实际缩包30M。</p>
+<a id="more"></a>  
+
+<h2 id="1-apk的组成"><a href="#1-apk的组成" class="headerlink" title="1 apk的组成"></a>1 apk的组成</h2><p>lib/    存放so文件，可能会有armeabi、armeabi-v7a、arm64-v8a、x86、x86_64、mips，大多数情况下只需要支持armabi与x86的架构即可，如果非必需，可以考虑拿掉x86的部分<br>res/    存放编译后的资源文件，例如：drawable、layout等等<br>assets/    应用程序的资源，应用程序可以使用AssetManager来检索该资源<br>META-INF/    该文件夹一般存放于已经签名的APK中，它包含了APK中所有文件的签名摘要等信息<br>classes(n).dex    classes文件是Java Class，被DEX编译后可供Dalvik/ART虚拟机所理解的文件格式<br>resources.arsc    编译后的二进制资源映射文件表。<br>AndroidManifest.xml    Android的清单文件，格式为XML，用于描述应用程序的名称、版本、所需权限、注册的四大组件</p>
+<h2 id="2-使用Android-Studio分析apk"><a href="#2-使用Android-Studio分析apk" class="headerlink" title="2 使用Android Studio分析apk"></a>2 使用Android Studio分析apk</h2><p><img src="/image/apksize/apk_analyz.jpg" alt="apk_analyz"></p>
+<h2 id="3-资源优化"><a href="#3-资源优化" class="headerlink" title="3 资源优化"></a>3 资源优化</h2><h3 id="3-1-无用资源移除。"><a href="#3-1-无用资源移除。" class="headerlink" title="3.1 无用资源移除。"></a>3.1 无用资源移除。</h3><ol>
+<li>源码通过lint工具扫描无用图片资源，打包后的apk可以使用ApkChecker进行扫描。<a href="https://github.com/Tencent/matrix/wiki/Matrix-Android-ApkChecker" target="_blank" rel="noopener">ApkChecker</a></li>
+<li>使用 shrinkResources true属性，这里shrinkResources属性的作用并不大，因为在扫描无用资源过程中， 系统为了避免使用getIdentifier过程找不到资源，所以在清除资源的时候条件判断非常严格，经过测试，这个功能非常鸡肋，大量无用的资源无法删除。</li>
+<li>检测资源文件md5一致的图片。 <a href="https://github.com/Tencent/matrix/wiki/Matrix-Android-ApkChecker" target="_blank" rel="noopener">ApkChecker</a></li>
+<li>支持特定的分辨率。现在大部分手机都是1080p，对应的xxhdpi的资源，所以我们只支持xxhdpi的资源，其他屏幕即使大一点，图片放大也不会太模糊。工具<a href="https://github.com/didi/booster/tree/master/booster-task-resource-deredundancy" target="_blank" rel="noopener">booster-task-resource-deredundancy</a></li>
+</ol>
+<h3 id="3-2-图片压缩"><a href="#3-2-图片压缩" class="headerlink" title="3.2 图片压缩"></a>3.2 图片压缩</h3><p>1 源码图片压缩缺陷较多，只能对工程内的图片进行压缩，无法压缩lib aar中的资源，采用gradle插件的方式能对全局图片进行压缩。 网上介绍webp格式的图片大小由于png，其实并不是，有些图片使用tinypng压缩后转为webp图片反而更大了。我们采取的方案是先将所有的图片png压缩，再尝试png转webp，如果webp更小则采用。<strong>这里需要注意webp格式4.0+才支持，对于包含透明度的4.2+才支持</strong>。<a href="https://github.com/didi/booster/tree/master/booster-task-compression-pngquant" target="_blank" rel="noopener">pngquant</a> <a href="https://github.com/didi/booster/tree/master/booster-task-compression-cwebp" target="_blank" rel="noopener">cwebp</a></p>
+<p>AAPT 会使用内置的压缩算法来优化 res/drawable/ 目录下的 PNG 图片，但这可能会导致本来已经优化过的图片体积变大，因此，可以通过在 build.gradle 中 设置 cruncherEnabled 来禁止 AAPT 来优化 PNG 图片</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">aaptOptions &#123;</span><br><span class="line">    cruncherEnabled &#x3D; false</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2  使用矢量图。 这个在我项目中后面大量用到了，缺点就是对5.+的系统支持的比较好，对于低版本是打包过程将矢量图直接转成了图片，没有效果。</p>
+<h3 id="3-3-移除适配资源"><a href="#3-3-移除适配资源" class="headerlink" title="3.3 移除适配资源"></a>3.3 移除适配资源</h3><p>我们需要 根据 App 目前所支持的语言版本去选用合适的语言资源，例如使用了 AppCompat，如果不做任何配置的话，最终 APK 包中会包含 AppCompat 中所有已翻译语言字符串，无论应用的其余部分是否翻译为同一语言。对此，我们可以 通过 resConfig 来配置使用哪些语言，从而让构建工具移除指定语言之外的所有资源。同理，也可以使用 resConfigs 去配置你应用需要的图片资源文件类，如 “xhdpi”、”xxhdpi” 等等，代码如下所示：</p>
+<h2 id="4-AndResGuard资源优化和压缩"><a href="#4-AndResGuard资源优化和压缩" class="headerlink" title="4 AndResGuard资源优化和压缩"></a>4 AndResGuard资源优化和压缩</h2><h3 id="4-1-arsc文件优化"><a href="#4-1-arsc文件优化" class="headerlink" title="4.1 arsc文件优化"></a>4.1 arsc文件优化</h3><p>1 arsc文件它记录了资源文件id对应的名称与路径，可以看到图中res/drawable的字样，开启优化混淆成短路径 res/s/a，可以减少文件的大小。坑：因为混淆资源路径，所以使用getIdentifier的方法是获取不到资源的。这里需要配置白名单的方式不混淆路径。<br><img src="/image/apksize/arsc_info.jpg" alt="arsc_info"></p>
+<p>2 zip文件压缩有deflate和stored两种方式，stored方式的文件是不会被压缩的，可以看到arsc文件以及png图片采用的是stored模式。如果文件采用deflate模式意味着AssetManager读取的时候需要解压。</p>
+<ul>
+<li>对.png、.jpg强制压缩，但是的确普遍压缩率在3%-5%，收益不是特别高；</li>
+<li>假若你的resources.arsc小于1M，可以对它进行压缩，这边可压缩50-70%。需要注意的是，如果你的resources.arsc是压缩的，程序需要把它读到内存，也就是会增大运行内存；</li>
+</ul>
+<h3 id="4-2-7zip压缩"><a href="#4-2-7zip压缩" class="headerlink" title="4.2 7zip压缩"></a>4.2 7zip压缩</h3><p>7z压缩算法号称优化了字典，完全兼容zip，使用7zip的最大压缩模式比传统zip方式的确有所提升。对于生成的apk重用7zip进行压缩，收益1.5M。</p>
+<p>此外，抖音 Android 团队还开源了针对于海外市场 App Bundle APK 的 AabResGuard 资源混淆工具。</p>
+<h2 id="5-代码优化"><a href="#5-代码优化" class="headerlink" title="5 代码优化"></a>5 代码优化</h2><h3 id="5-1-R文件内联"><a href="#5-1-R文件内联" class="headerlink" title="5.1 R文件内联"></a>5.1 R文件内联</h3><p>Android在构建过程中会根据资源生成R文件，里面包含了资源索引，使用该索引可以在最终生成的resources.arsc资源映射表中找到对应资源，对于开发者来说在代码中引用资源很方便。在Library工程中引用的R资源索引不是final的，所以我们在Library工程不能在switch - case 和Annotation中使用资源索引。由于引用的资源不是final的，所以Library的产物aar中包含的class中使用的资源索引还是会以包名存在。在App工程中构建时会将依赖的AAR资源进行合并，根据合并的结果生成最终的R资源索引，这时的资源索引已经确定，所以全部是final的，java编译器在编译时会将final常量进行inline内联操作，也就是App工程中的java源码编译后的class中使用的R资源索引全部会替换为常量值。如果Library A依赖了Library B，则Library A包名的R资源文件中包含所有Library B的资源索引，所以在代码中既可以引用Library A包名的R资源索引使用Library B中的资源，也可以使用Library B包名的R资源索引使用Library B中的资源。R文件inline可以全局将将int id值直接改到代码中， Lib中的R文件类就可以删除。<br>工具：<a href="https://github.com/didi/booster/tree/master/booster-transform-r-inline" target="_blank" rel="noopener">r-inline</a></p>
+<h3 id="5-2-无用log删除"><a href="#5-2-无用log删除" class="headerlink" title="5.2 无用log删除"></a>5.2 无用log删除</h3><p>其实项目中大量的日志在relase模式下是不输出的，那这块代码也是无用的。<br>工具：<a href="https://github.com/bytedance/ByteX/blob/master/method-call-opt-plugin/README.md" target="_blank" rel="noopener">method-call-opt-plugin</a></p>
+<h3 id="5-3-编译插件升级"><a href="#5-3-编译插件升级" class="headerlink" title="5.3 编译插件升级"></a>5.3 编译插件升级</h3><p>打包插件从3.0.1升级到3.4.2后，会开启d8和R8编译器。编译生成的dex产物更小。 收益2M。<br>ProGuard 和 R8 都应用了基本名称混淆：它们 都使用简短，无意义的名称重命名类，字段和方法。他们还可以 删除调试属性。但是，R8 在 inline 内联容器类中更有效，并且在删除未使用的类，字段和方法上则更具侵略性。例如，R8 本身集成在 ProGuard V6.1.1 版本中，在压缩 apk 的大小方面，与 ProGuard 的 8.5％ 相比，使用 R8 apk 尺寸减小了约 10％。并且，随着 Kotlin 现在成为 Android 的第一语言，R8 进行了 ProGuard 尚未提供的一些 Kotlin 的特定的优化。</p>
+<h3 id="5-3-混淆优化"><a href="#5-3-混淆优化" class="headerlink" title="5.3 混淆优化"></a>5.3 混淆优化</h3><p>由于部分SDK偷懒，针对代码直接做暴力全部keep。</p>
+<p>通过jadx工具反编译apk，可以看到apk内大量的代码未进行混淆，s1我们和消息sdk团队合作，将消息的混淆规则精细化，收益700+k.</p>
+<h2 id="6-SO动态下载"><a href="#6-SO动态下载" class="headerlink" title="6 SO动态下载"></a>6 SO动态下载</h2><p>分析业务场景，实现部分业务so动态下载。通过数据分析，正式版本下载成功率在95%，错误主要集中在网络错误。</p>
+<p>基于mtl插件，实现通过配置操作so的remove和上传，并将信息写入到asset配置文件中。</p>
+<p>最初版本我们基于mtl老代码，直接对so进行上传下载，下载成率是95%， 新版本对so进行zip压缩再上传，下载体积减少一半，下载成功率从95.8%提示到98.0%。<br><img src="https://ata2-img.oss-cn-zhangjiakou.aliyuncs.com/54079b957cdfa4b93bd25a8fa743dabb.png" alt=""></p>
+<h2 id="7-科学的删除无用代码"><a href="#7-科学的删除无用代码" class="headerlink" title="7 科学的删除无用代码"></a>7 科学的删除无用代码</h2><h3 id="7-1-建立代码覆盖率"><a href="#7-1-建立代码覆盖率" class="headerlink" title="7.1 建立代码覆盖率"></a>7.1 建立代码覆盖率</h3><p>1 我们通过lint扫描无用代码，在删除代码的时候风险较高，因为业务复杂，可能涉及到反射的不确定性，那我们需要建立一个机制降低删除代码的风险。</p>
+<ul>
+<li>代码覆盖率建设其实就是在编译器，通过插桩的方式在每个类的静态代码块中增加一条记录，当类加载的时候就会被上报。</li>
+<li>通过线上收集类的使用率，结合本地lint可安全删除代码。</li>
+</ul>
+<p>2 对于部分下线业务，代码引用链依旧存在，lint无法扫码，但是可以通过代码覆盖率发现。</p>
+<p>3 通过代码覆盖率实现责任制，对于lib多个版本覆盖率低的问题将会推进解决。<br><img src="/image/apksize/code_trace_info.jpg" alt="arsc_info"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>因为包大小优化到后面也基本没有什么空间，需要保持现阶段优化的成果。<br>1 通过打包编译时期，dif不同版本依赖lib的包大小，对于超过阈值强制打包失败，集成lib需要邮件审核。<br>2  对于代码覆盖率，连续三个版本低于阈值将会抄送优化给负责人治理。</p>
+<p>激活为维度, 包大小从60.8m下降到42m后下载率从3.54%提高到3.98%，上涨0.44个百分点,相对提高12.37%。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Caij
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://www.fuckcode.xyz/2021/01/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html" title="App体积优化">http://www.fuckcode.xyz/2021/01/27/App体积优化.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/%E8%BD%AC%E8%BD%BD%E8%AF%B7%E5%A3%B0%E6%98%8E%E5%87%BA%E5%A4%84/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>转载请声明出处</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/21/Android%20Trace%E5%AE%9E%E6%88%98.html" rel="prev" title="Android Trace实战">
+      <i class="fa fa-chevron-left"></i> Android Trace实战
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-apk的组成"><span class="nav-number">1.</span> <span class="nav-text">1 apk的组成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-使用Android-Studio分析apk"><span class="nav-number">2.</span> <span class="nav-text">2 使用Android Studio分析apk</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-资源优化"><span class="nav-number">3.</span> <span class="nav-text">3 资源优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-无用资源移除。"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 无用资源移除。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-图片压缩"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 图片压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-移除适配资源"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 移除适配资源</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-AndResGuard资源优化和压缩"><span class="nav-number">4.</span> <span class="nav-text">4 AndResGuard资源优化和压缩</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-arsc文件优化"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 arsc文件优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-7zip压缩"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 7zip压缩</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-代码优化"><span class="nav-number">5.</span> <span class="nav-text">5 代码优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-R文件内联"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 R文件内联</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-无用log删除"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 无用log删除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-编译插件升级"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 编译插件升级</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-混淆优化"><span class="nav-number">5.4.</span> <span class="nav-text">5.3 混淆优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-SO动态下载"><span class="nav-number">6.</span> <span class="nav-text">6 SO动态下载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-科学的删除无用代码"><span class="nav-number">7.</span> <span class="nav-text">7 科学的删除无用代码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-建立代码覆盖率"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 建立代码覆盖率</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Caij</p>
+  <div class="site-description" itemprop="description">厚积薄发</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">25</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Caij</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID: 'af4bd8203af29949fd4c',
+      clientSecret: '9387549fb655911da2509580f429d1210a078c63',
+      repo: 'Caij.github.io',
+      owner: 'Caij',
+      admin: ['Caij'],
+      id: 'f243e088116e30cc22a7b7b1bdb6a7c2',
+        language: '',
+      distractionFreeMode: 'true'
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
