@@ -53,16 +53,17 @@
 <meta property="og:site_name" content="Caij">
 <meta property="og:description" content="随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，作为一个非心智成熟型App，apk影响拉新用户转化率，谷歌给出了一个很详细的数据，包体大小每上升 6MB，应用下载转化率就会下降 1%.  2020年app包大小从60M减小到35M，算上业务增量，实际缩包30M。">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/apk_size_timeline.png">
+<meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/apk_size_down_data.png">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/apk_analyz.jpg">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/arsc_info.jpg">
 <meta property="og:image" content="https://ata2-img.oss-cn-zhangjiakou.aliyuncs.com/54079b957cdfa4b93bd25a8fa743dabb.png">
 <meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/code_trace_info.jpg">
-<meta property="og:image" content="http://www.fuckcode.xyz/image/apksize/apk_size_down_data.png">
 <meta property="article:published_time" content="2021-01-26T16:00:00.000Z">
-<meta property="article:modified_time" content="2021-03-03T06:37:32.335Z">
+<meta property="article:modified_time" content="2021-03-09T03:00:11.662Z">
 <meta property="article:author" content="Caij">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://www.fuckcode.xyz/image/apksize/apk_analyz.jpg">
+<meta name="twitter:image" content="http://www.fuckcode.xyz/image/apksize/apk_size_timeline.png">
 
 <link rel="canonical" href="http://www.fuckcode.xyz/2021/01/27/App%E4%BD%93%E7%A7%AF%E4%BC%98%E5%8C%96.html">
 
@@ -236,7 +237,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-03-03 14:37:32" itemprop="dateModified" datetime="2021-03-03T14:37:32+08:00">2021-03-03</time>
+                <time title="Modified: 2021-03-09 11:00:11" itemprop="dateModified" datetime="2021-03-09T11:00:11+08:00">2021-03-09</time>
               </span>
 
           
@@ -253,6 +254,9 @@
         <p>随着Android移动开发的需求越来越复杂，我们不可避免的遇到发布出去的apk体积越来越大的问题，<br>作为一个非心智成熟型App，apk影响拉新用户转化率，谷歌给出了一个很详细的数据，包体大小每上升 6MB，应用下载转化率就会下降 1%.  2020年app包大小从60M减小到35M，算上业务增量，实际缩包30M。</p>
 <a id="more"></a>  
 
+<p><img src="/image/apksize/apk_size_timeline.png" alt="apk_size_timeline"></p>
+<p>下面是年底我们对包大小转化率做的实验数据，</p>
+<p><img src="/image/apksize/apk_size_down_data.png" alt="apk_size_down_data"></p>
 <h2 id="1-apk的组成"><a href="#1-apk的组成" class="headerlink" title="1 apk的组成"></a>1 apk的组成</h2><p>lib/    存放so文件，可能会有armeabi、armeabi-v7a、arm64-v8a、x86、x86_64、mips，大多数情况下只需要支持armabi与x86的架构即可，如果非必需，可以考虑拿掉x86的部分<br>res/    存放编译后的资源文件，例如：drawable、layout等等<br>assets/    应用程序的资源，应用程序可以使用AssetManager来检索该资源<br>META-INF/    该文件夹一般存放于已经签名的APK中，它包含了APK中所有文件的签名摘要等信息<br>classes(n).dex    classes文件是Java Class，被DEX编译后可供Dalvik/ART虚拟机所理解的文件格式<br>resources.arsc    编译后的二进制资源映射文件表。<br>AndroidManifest.xml    Android的清单文件，格式为XML，用于描述应用程序的名称、版本、所需权限、注册的四大组件</p>
 <h2 id="2-使用Android-Studio分析apk"><a href="#2-使用Android-Studio分析apk" class="headerlink" title="2 使用Android Studio分析apk"></a>2 使用Android Studio分析apk</h2><p><img src="/image/apksize/apk_analyz.jpg" alt="apk_analyz"></p>
 <h2 id="3-资源优化"><a href="#3-资源优化" class="headerlink" title="3 资源优化"></a>3 资源优化</h2><h3 id="3-1-无用资源移除。"><a href="#3-1-无用资源移除。" class="headerlink" title="3.1 无用资源移除。"></a>3.1 无用资源移除。</h3><ol>
@@ -291,7 +295,6 @@
 <p>2 对于部分下线业务，代码引用链依旧存在，lint无法扫码，但是可以通过代码覆盖率发现。</p>
 <p>3 通过代码覆盖率实现责任制，对于lib多个版本覆盖率低的问题将会推进解决。<br><img src="/image/apksize/code_trace_info.jpg" alt="arsc_info"></p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>因为包大小优化到后面也基本没有什么空间，需要保持现阶段优化的成果。<br>1 通过打包编译时期，dif不同版本依赖lib的包大小，对于超过阈值强制打包失败，集成lib需要邮件审核。<br>2  对于代码覆盖率，连续三个版本低于阈值将会抄送优化给负责人治理。</p>
-<p><img src="/image/apksize/apk_size_down_data.png" alt="apk_size_down_data"></p>
 
     </div>
 
@@ -327,7 +330,10 @@
     <a href="/2021/01/21/Android%20Trace%E5%AE%9E%E6%88%98.html" rel="prev" title="Android Trace实战">
       <i class="fa fa-chevron-left"></i> Android Trace实战
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2021/02/03/%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%E5%BB%BA%E8%AE%BE.html" rel="next" title="代码覆盖率建设">
+      代码覆盖率建设 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -402,7 +408,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">51</span>
+          <span class="site-state-item-count">52</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
